@@ -25,6 +25,8 @@ console = Console()
 AUTH_TOKEN = "Bearer sk-123"
 API_URL = "http://127.0.0.1:1234/v1/chat/completions"
 MODEL = "notes|nemotron:latest|61-219-64-161|o"
+MODEL = "gpt-4o"
+
 MAX_TOKENS = 2000
 TEMPERATURE = 0.75
 
@@ -400,7 +402,7 @@ def main():
             choices.extend(["Stage Files", "History", "Exit"])
 
             action = questionary.select(
-                "What would you like to do?",
+                f"{MODEL} >> What would you like to do?",
                 choices=choices,
                 style=questionary_style
             ).unsafe_ask()
