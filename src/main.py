@@ -435,6 +435,13 @@ def save_gitignore(ignored_files):
     with open('.gitignore', 'w') as f:
         f.write('\n'.join(ignored_files) + '\n')
 
+def get_tracked_files():
+    """
+    Get a list of all tracked files in the repository.
+    """
+    result = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
+    return result.stdout.splitlines()
+
 def main():
     """
     Main function to generate and commit a message based on staged changes.
