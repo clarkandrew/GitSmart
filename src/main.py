@@ -30,9 +30,9 @@ TEMPERATURE = 0.75
 
 # Theme configuration
 THEME = {
-    "primary": "#678cb1",  # Soft blue
-    "secondary": "#8ea6c0",  # Light blue
-    "accent": "#ffcb6b",  # Warm yellow
+    "primary": "#e5c07b",  # Soft blue
+    "secondary": "#ffcb6b",  # Light blue
+    "accent": "#8ea6c0",  # Warm yellow
     "success": "#98c379",  # Soft green
     "error": "#e06c75",  # Soft red
     "warning": "#e5c07b",  # Warm yellow
@@ -72,7 +72,11 @@ class StyledCLIPrinter:
         self.console.print()
 
 def create_styled_table(title: Optional[str] = None) -> Table:
-    table = Table(show_header=True, header_style=HEADER_STYLE, border_style=BORDER_STYLE, show_lines=True, box=None, padding=(0, 1), title=title)
+    table = Table(show_header=False, header_style=HEADER_STYLE, border_style=None, show_lines=False, box=None, padding=(2, 2), title=title)
+    return table
+
+def create_styled_table_clean(title: Optional[str] = None) -> Table:
+    table = Table(show_header=False, header_style=None, border_style=None, show_lines=False, box=None, padding=(1, 1), title=title, style=None,expand=True)
     return table
 
 def extract_tag_value(text: str, tag: str) -> str:
@@ -269,7 +273,7 @@ def display_commit_history(num_commits=5):
         log_output = result.stdout.decode("utf-8")
         commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
 
-        table = create_styled_table("Recent Commits")
+        table = create_styled_table_clean("Recent Commits")
         table.add_column("Hash", style=f"bold {THEME['secondary']}")
         table.add_column("Message", style=THEME["text"])
         table.add_column("Additions", style=THEME["success"])
@@ -295,7 +299,7 @@ def display_commit_history(num_commits=5):
 
             table.add_row(commit_hash, commit_message, f"+{additions}", f"-{deletions}")
 
-        console.print(Panel(table, style=PANEL_STYLE, border_style=BORDER_STYLE, padding=(1, 2)))
+        console.print(Panel(table, style="", border_style=BORDER_STYLE, padding=(1, 2)))
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to get commit history: {e}")
@@ -352,11 +356,14 @@ def display_and_get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[
 
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
-
+from rich.markdown import Markdown
 def main():
     """
     Main function to generate and commit a message based on staged changes.
     """
+
+    console.print(Markdown("# c-01"))
+    display_commit_history()
     printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
 
@@ -366,16 +373,16 @@ def main():
     while True:
         try:
             printer.print_divider()
+
+            # Dynamically generate the list of choices based on the presence of staged changes
+            choices = ["Generate commit for staged files"]
+            if staged_changes:
+                choices.extend(["Review Staged Changes", "Unstage Files"])
+            choices.extend(["Stage Files", "History", "Exit"])
+
             action = questionary.select(
                 "What would you like to do?",
-                choices=[
-                    "Generate commit for staged files",
-                    "Review Staged Changes",
-                    "Stage Files",
-                    "Unstage Files",
-                    "History",
-                    "Exit"
-                ],
+                choices=choices,
                 style=questionary_style
             ).unsafe_ask()
 
@@ -433,9 +440,6 @@ def main():
                 files_to_unstage = questionary.checkbox("Select files to unstage:", choices=[change["file"] for change in staged_changes]).unsafe_ask()
                 if files_to_unstage:
                     unstage_files(files_to_unstage)
-
-            elif action == "History":
-                display_commit_history()
 
             elif action == "Exit":
                 console.print("[bold green]Exiting...[/bold green]")
