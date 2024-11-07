@@ -418,6 +418,23 @@ def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
 
+
+def load_gitignore():
+    """
+    Load the current .gitignore file and return the list of ignored files.
+    """
+    if not os.path.exists('.gitignore'):
+        return []
+    with open('.gitignore', 'r') as f:
+        return [line.strip() for line in f.readlines() if line.strip()]
+
+def save_gitignore(ignored_files):
+    """
+    Save the list of ignored files to the .gitignore file.
+    """
+    with open('.gitignore', 'w') as f:
+        f.write('\n'.join(ignored_files) + '\n')
+
 def main():
     """
     Main function to generate and commit a message based on staged changes.
@@ -436,15 +453,18 @@ def main():
             staged_changes = parse_diff(diff)
             unstaged_changes = parse_diff(unstaged_diff)
 
+            # Count the number of staged files
+            num_staged_files = len(staged_changes)
+
             # Dynamically generate the list of choices based on the presence of staged changes
             choices = []
             if staged_changes:
-                choices.append("Generate commit for staged files")
+                choices.append(f"Generate commit for staged files ({num_staged_files})")
                 choices.extend(["Review Staged Changes", "Unstage Files"])
-            choices.extend(["Stage Files", "History", "Exit"])
+            choices.extend(["Stage Files", "Ignore Files", "History", "Exit"])
 
             action = questionary.select(f"What would you like to do?", choices=choices, style=questionary_style).unsafe_ask()
-            if action == "Generate commit for staged files":
+            if action == f"Generate commit for staged files ({num_staged_files})":
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
                     continue
@@ -502,6 +522,15 @@ def main():
                 files_to_unstage = questionary.checkbox("Select files to unstage:", choices=[change["file"] for change in staged_changes]).unsafe_ask()
                 if files_to_unstage:
                     unstage_files(files_to_unstage)
+
+            elif action == "Ignore Files":
+                ignored_files = load_gitignore()
+                all_files = [change["file"] for change in unstaged_changes + staged_changes]
+                choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
+                selected_files = questionary.checkbox("Select files to ignore:", choices=choices).unsafe_ask()
+                save_gitignore(selected_files)
+                console.print("[bold green]Updated .gitignore file.[/bold green]")
+
             elif action == "History":
                 display_commit_history(0)
             elif action == "Exit":
@@ -512,7 +541,6 @@ def main():
         except KeyboardInterrupt:
             console.print("\n[bold red]Process interrupted by user. Exiting...[/bold red]")
             console.print("Goodbye.")
-
 
 if __name__ == "__main__":
     main()
