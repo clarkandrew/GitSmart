@@ -2,6 +2,21 @@
 
 C0MIT is a powerful command-line tool designed to streamline your Git workflow. It assists with generating commit messages, staging and unstaging files, and displaying commit history. Leveraging the `rich` library for styled console output and `questionary` for interactive prompts, C0MIT provides a user-friendly and visually appealing interface.
 
+## Table of Contents
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Features](#features)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+- [Acknowledgments](#acknowledgments)
+
+## Introduction
+
+Welcome to C0MIT! This tool is designed to be the go-to library for anyone looking to enhance their Git workflow. Whether you're a seasoned developer or just getting started, C0MIT offers a range of features to make your Git experience smoother and more efficient.
+
 ## Installation
 
 To install C0MIT, follow these steps:
@@ -94,8 +109,8 @@ C0MIT can be configured using the following options:
 - **Review Staged Changes**: Display a detailed view of the changes that are currently staged.
 - **Stage and Unstage Files**: Easily stage or unstage files for commit.
 - **Display Commit History**: View the commit history with details of additions and deletions.
-- **Capture the Full Image with Chain-of-thought prompts**: Use our masteful LLM prompts or customize it with your own for a seamless user experience.
-- **Intuitive and Simply CLI**: Enjoy a visually appealing interface with styled console output using the `rich` library.
+- **Capture the Full Image with Chain-of-thought prompts**: Use our masterful LLM prompts or customize it with your own for a seamless user experience.
+- **Intuitive and Simple CLI**: Enjoy a visually appealing interface with styled console output using the `rich` library.
 
 ## Contributing
 
