@@ -266,12 +266,46 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
     panel = Panel(grouped_panels, title="[bold white]File Diffs[/bold white]", border_style="dark_khaki", style="white on rgb(39,40,34)", padding=(2, 4), expand=True)
 
     console.print(Align.left(panel, vertical="middle"))
+def parse_commit_log(log_output: str):
+    """Parse the git log output into a list of commit details."""
+    commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
+    parsed_commits = []
 
-def display_commit_history(num_commits=5):
+    for commit in commits:
+        lines = commit.split("\n")
+        if len(lines) < 2:
+            continue
+
+        commit_hash, commit_message = lines[0].split(" ", 1)
+        commit_message = Text(commit_message, style="bold")
+
+        additions = deletions = 0
+        for line in lines[1:]:
+            if "files changed" in line:
+                parts = line.split(", ")
+                for part in parts:
+                    if "insertion" in part:
+                        additions = int(part.split()[0])
+                    elif "deletion" in part:
+                        deletions = int(part.split()[0])
+
+        parsed_commits.append((commit_hash, commit_message, additions, deletions))
+
+    return parsed_commits
+
+def display_commit_history(num_commits: int = 5):
+    """Display the commit history with the specified number of commits."""
     try:
-        result = subprocess.run(["git", "log", "--pretty=format:%h %s", "--stat", f"-n", str(num_commits)], stdout=subprocess.PIPE, check=True)
+        # Determine the number of commits to fetch
+        num_commits_arg = ["-n", str(num_commits)] if num_commits > 0 else []
+
+        result = subprocess.run(
+            ["git", "log", "--pretty=format:%h %s", "--stat"] + num_commits_arg,
+            stdout=subprocess.PIPE,
+            check=True
+        )
         log_output = result.stdout.decode("utf-8")
-        commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
+        parsed_commits = parse_commit_log(log_output)
 
         table = create_styled_table_clean("Recent Commits")
         table.add_column("Hash", style=f"bold {THEME['secondary']}")
@@ -279,24 +313,7 @@ def display_commit_history(num_commits=5):
         table.add_column("Additions", style=THEME["success"])
         table.add_column("Deletions", style=THEME["error"])
 
-        for commit in commits:
-            lines = commit.split("\n")
-            if len(lines) < 2:
-                continue
-
-            commit_hash, commit_message = lines[0].split(" ", 1)
-            commit_message = Text(commit_message, style="bold")
-
-            additions = deletions = 0
-            for line in lines[1:]:
-                if "files changed" in line:
-                    parts = line.split(", ")
-                    for part in parts:
-                        if "insertion" in part:
-                            additions = int(part.split()[0])
-                        elif "deletion" in part:
-                            deletions = int(part.split()[0])
-
+        for commit_hash, commit_message, additions, deletions in parsed_commits:
             table.add_row(commit_hash, commit_message, f"+{additions}", f"-{deletions}")
 
         console.print(Panel(table, style="", border_style=BORDER_STYLE, padding=(1, 2)))
@@ -362,7 +379,7 @@ def main():
     Main function to generate and commit a message based on staged changes.
     """
     console.print(Markdown("# c-01"))
-    display_commit_history()
+    display_commit_history(0)
     printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
 
@@ -380,7 +397,7 @@ def main():
             if staged_changes:
                 choices.append("Generate commit for staged files")
                 choices.extend(["Review Staged Changes", "Unstage Files"])
-            choices.extend(["Stage Files", "Exit"])
+            choices.extend(["Stage Files", "History", "Exit"])
 
             action = questionary.select(
                 "What would you like to do?",
@@ -444,7 +461,8 @@ def main():
                 files_to_unstage = questionary.checkbox("Select files to unstage:", choices=[change["file"] for change in staged_changes]).unsafe_ask()
                 if files_to_unstage:
                     unstage_files(files_to_unstage)
-
+            elif action == "History":
+                display_commit_history()
             elif action == "Exit":
                 console.print("[bold green]Exiting...[/bold green]")
                 break
