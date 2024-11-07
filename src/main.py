@@ -332,16 +332,17 @@ class CLIPrinter:
         self.console.rule(style="dark_khaki")
         self.console.print("\n")
 
-def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[Dict[str, Any]]):
+def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[Dict[str, Any]],staged: bool = True,unstaged: bool = False):
     """
     Display the status of unstaged and staged changes.
     """
     subtitle = "Changes: Additions and Deletions"
     unstaged_panel = get_diff_summary_panel(unstaged_changes, "Unstaged Changes", subtitle, _panel_style="")
     staged_panel = get_diff_summary_panel(staged_changes, "Staged Changes", subtitle, _panel_style="")
-
-    console.print(unstaged_panel)
-    console.print(staged_panel)
+    if unstaged:
+        console.print(unstaged_panel)
+    if staged:
+        console.print(staged_panel)
 
 def display_and_get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
@@ -351,8 +352,7 @@ def display_and_get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[
     unstaged_diff = get_git_diff(staged=False)
     staged_changes = parse_diff(diff)
     unstaged_changes = parse_diff(unstaged_diff)
-
-    display_status(unstaged_changes, staged_changes)
+    display_status(unstaged_changes, staged_changes,staged=True if staged_changes else False,unstaged=True if unstaged_changes else False)
 
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
@@ -361,24 +361,26 @@ def main():
     """
     Main function to generate and commit a message based on staged changes.
     """
-
     console.print(Markdown("# c-01"))
     display_commit_history()
     printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
 
     logger.debug("Entering main function.")
-    diff, unstaged_diff, staged_changes, unstaged_changes = display_and_get_status()
 
     while True:
         try:
             printer.print_divider()
+            diff, unstaged_diff, staged_changes, unstaged_changes = display_and_get_status()
+            staged_changes = parse_diff(diff)
+            unstaged_changes = parse_diff(unstaged_diff)
 
             # Dynamically generate the list of choices based on the presence of staged changes
-            choices = ["Generate commit for staged files"]
+            choices = []
             if staged_changes:
+                choices.append("Generate commit for staged files")
                 choices.extend(["Review Staged Changes", "Unstage Files"])
-            choices.extend(["Stage Files", "History", "Exit"])
+            choices.extend(["Stage Files", "Exit"])
 
             action = questionary.select(
                 "What would you like to do?",
@@ -423,7 +425,9 @@ def main():
                     console.print("[bold red]No staged changes detected.[/bold red]")
                     continue
                 display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
-                display_status(unstaged_changes, staged_changes)
+                staged_changes = parse_diff(diff)
+                unstaged_changes = parse_diff(unstaged_diff)
+                display_status(unstaged_changes, staged_changes, staged=True if staged_changes else False, unstaged=True if unstaged_changes else False)
 
             elif action == "Stage Files":
                 if not unstaged_changes:
