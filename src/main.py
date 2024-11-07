@@ -607,6 +607,7 @@ def get_repo_name():
         return repo_name
     except subprocess.CalledProcessError:
         return "Unknown Repository"
+
 def main():
     """
     Main function to generate and commit a message based on staged changes.
@@ -630,35 +631,31 @@ def main():
             if staged_changes:
                 choices.append(f"Generate commit for staged files ({num_staged_files})")
                 choices.append("Review Changes")
-                choices.append("")
                 choices.append("Unstage Files")
                 choices.append("Stage Files")
-                choices.append("")
                 choices.append("Ignore Files")
-                choices.append("")
-                choices.append(f"{repo_name} History")
+                choices.append("History")
                 choices.append("Exit")
             elif unstaged_changes:
                 choices.append("Review Changes")
-                choices.append("")
                 choices.append("Stage Files")
-                choices.append("")
                 choices.append("Ignore Files")
-                choices.append("")
-                choices.append(f"{repo_name} History")
+                choices.append("History")
                 choices.append("Exit")
             else:
                 choices.append("Ignore Files")
-                choices.append("")
-                choices.append(f"{repo_name} History")
+                choices.append("History")
                 choices.append("Exit")
 
             # Remove empty strings from choices
-            choices = [choice for choice in choices if choice]
+            # choices = [choice for choice in choices if choice]
 
             total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
             total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
-            action = questionary.select(f"{repo_name} +{total_additions} additions, -{total_deletions} deletions | What would you like to do?", choices=choices, style=questionary_style).unsafe_ask()
+
+            console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
+
+            action = questionary.select("Choose an option:", choices=choices).unsafe_ask()
             if action == f"Generate commit for staged files ({num_staged_files})":
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
@@ -729,7 +726,7 @@ def main():
                 save_gitignore(selected_files)
                 console.print("[bold green]Updated .gitignore file.[/bold green]")
 
-            elif action == f"{repo_name} History":
+            elif action == "History":
                 display_commit_history(0)
                 console.print("[bold green]Displayed commit history.[/bold green]")
 
@@ -738,9 +735,7 @@ def main():
                 break
 
         except KeyboardInterrupt:
-            console.print("\n[bold red]Process interrupted by user. Exiting...[/bold red]")
-            console.print("Goodbye.")
-            break
+            continue
 
 if __name__ == "__main__":
     main()
