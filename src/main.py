@@ -125,7 +125,8 @@ def generate_commit_message(diff: str) -> str:
     body = {"model": MODEL, "messages": messages, "max_tokens": MAX_TOKENS, "n": 1, "stop": None, "temperature": TEMPERATURE, "stream": True}
 
     try:
-        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
+        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
+
             task = progress.add_task(MODEL if len(MODEL) < 30 else f"{MODEL[0:31]}...", start=False)
             progress.start_task(task)
 
