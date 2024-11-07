@@ -81,7 +81,7 @@ def create_styled_table(title: Optional[str] = None) -> Table:
     return table
 
 def create_styled_table_clean(title: Optional[str] = None) -> Table:
-    table = Table(show_header=False, header_style=None, border_style=None, show_lines=False, box=None, padding=(1, 1), title=title, style=None,expand=True)
+    table = Table(show_header=False, header_style=None, border_style=None, show_lines=False, box=None, padding=(0, 1), title=title, style=None,expand=True)
     return table
 
 def extract_tag_value(text: str, tag: str) -> str:
@@ -229,7 +229,11 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subti
     """
     Display the staged changes in a neat panel.
     """
-    table = Table(show_header=True, header_style="bold magenta", show_lines=False, box=None)
+    if title == "Unstaged Changes":
+        color = "red"
+    else:
+        color = "green"
+    table = Table(show_header=True, header_style=f"bold {color}",style=f"italic {color}", show_lines=False, box=None)
     table.add_column("File", justify="left", style="cyan", no_wrap=True)
     table.add_column("Additions", justify="right", style="green")
     table.add_column("Deletions", justify="right", style="red")
@@ -322,7 +326,7 @@ def display_commit_history(num_commits: int = 5):
         for commit_hash, commit_message, additions, deletions in parsed_commits:
             table.add_row(commit_hash, commit_message, f"+{additions}", f"-{deletions}")
 
-        console.print(Panel(table, style="", border_style=BORDER_STYLE, padding=(1, 2)))
+        console.print(Panel(table, style="", border_style="black", padding=(1, 2)))
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to get commit history: {e}")
@@ -385,12 +389,12 @@ def main():
     Main function to generate and commit a message based on staged changes.
     """
     console.print(Markdown("# c-01"))
-    display_commit_history(0)
     printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
 
 
 
+    display_commit_history(3)
     while True:
         try:
             printer.print_divider()
@@ -468,7 +472,7 @@ def main():
                 if files_to_unstage:
                     unstage_files(files_to_unstage)
             elif action == "History":
-                display_commit_history()
+                display_commit_history(0)
             elif action == "Exit":
                 console.print("[bold green]Exiting...[/bold green]")
                 break
