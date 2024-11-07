@@ -8,6 +8,7 @@ from rich.syntax import Syntax
 from rich.align import Align
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.panel import Panel
+import configparser
 from rich.table import Table
 from rich.rule import Rule
 from rich.text import Text
@@ -21,14 +22,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 console = Console()
 
-# Constants for API interaction
-AUTH_TOKEN = "Bearer sk-123"
-API_URL = "http://127.0.0.1:1234/v1/chat/completions"
-MODEL = "notes|nemotron:latest|61-219-64-161|o"
-MODEL = "gpt-4o"
+# Initialize the config parser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
-MAX_TOKENS = 2000
-TEMPERATURE = 0.75
+# Load configurations
+AUTH_TOKEN = config['API']['auth_token']
+API_URL = config['API']['api_url']
+MODEL = config['API']['model']
+MAX_TOKENS = int(config['API']['max_tokens'])
+TEMPERATURE = float(config['API']['temperature'])
 
 # Theme configuration
 THEME = {
@@ -123,7 +126,7 @@ def generate_commit_message(diff: str) -> str:
 
     try:
         with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
-            task = progress.add_task("Waiting for response...", start=False)
+            task = progress.add_task(MODEL if len(MODEL) < 30 else f"{MODEL[0:31]}...", start=False)
             progress.start_task(task)
 
             response = requests.post(API_URL, headers=headers, json=body, stream=True)
@@ -402,7 +405,7 @@ def main():
             choices.extend(["Stage Files", "History", "Exit"])
 
             action = questionary.select(
-                f"{MODEL} >> What would you like to do?",
+                f"What would you like to do?",
                 choices=choices,
                 style=questionary_style
             ).unsafe_ask()
