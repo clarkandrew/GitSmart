@@ -397,7 +397,7 @@ def main():
     display_commit_history(3)
     while True:
         try:
-            printer.print_divider()
+
             diff, unstaged_diff, staged_changes, unstaged_changes = display_and_get_status()
             staged_changes = parse_diff(diff)
             unstaged_changes = parse_diff(unstaged_diff)
