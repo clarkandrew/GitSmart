@@ -368,7 +368,6 @@ def configure_questionary_style():
         ]
     )
 
-
 def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Table:
     """
     Create a table summarizing file changes.
@@ -381,7 +380,8 @@ def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Ta
     total_additions = 0
     total_deletions = 0
     for change in file_changes:
-        table.add_row(Padding(change["file"], (0, 3)), Padding(f"+{str(change['additions'])}", (0, 3)), Padding(f"-{str(change['deletions'])}", (0, 3)))
+        file_with_counts = f"{change['file']} (+{change['additions']}/-{change['deletions']})"
+        table.add_row(Padding(file_with_counts, (0, 3)), Padding(f"+{str(change['additions'])}", (0, 3)), Padding(f"-{str(change['deletions'])}", (0, 3)))
         total_additions += change["additions"]
         total_deletions += change["deletions"]
 
@@ -389,7 +389,6 @@ def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Ta
     table.add_row(Padding("Total", (0, 3)), Padding(f"+{str(total_additions)}", (0, 3)), Padding(f"-{str(total_deletions)}", (0, 3)), style="bold")
 
     return table
-
 
 def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[Dict[str, Any]], staged: bool = True, unstaged: bool = False):
     """
@@ -399,14 +398,13 @@ def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[
 
     if unstaged:
         unstaged_table = get_diff_summary_table(unstaged_changes, "red")
-        unstaged_panel = Panel(Padding(unstaged_table,(1,1)),title_align="left", title="[bold red]Unstaged Changes", border_style="red", width=panel_width, expand=False)
+        unstaged_panel = Panel(Padding(unstaged_table, (1, 1)), title_align="left", title="[bold red]Unstaged Changes", border_style="red", width=100, expand=False)
         console.print(unstaged_panel)
 
     if staged:
         staged_table = get_diff_summary_table(staged_changes, "green")
-        staged_panel = Panel(Padding(staged_table,(1,1)), title_align="left",title="[bold green]Staged Changes", border_style="green", width=panel_width, expand=False)
+        staged_panel = Panel(Padding(staged_table, (1, 1)), title_align="left", title="[bold green]Staged Changes", border_style="green", width=100, expand=False)
         console.print(staged_panel)
-
 
 def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
