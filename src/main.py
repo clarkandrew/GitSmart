@@ -451,7 +451,7 @@ def main():
 
         except KeyboardInterrupt:
             console.print("\n[bold red]Process interrupted by user. Exiting...[/bold red]")
-            break
+            pass
 
 if __name__ == "__main__":
     main()
