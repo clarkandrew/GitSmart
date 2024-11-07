@@ -13,7 +13,9 @@ import configparser
 from rich.table import Table
 from rich.rule import Rule
 from rich.text import Text
+from rich.padding import Padding
 import questionary
+from rich.markdown import Markdown
 import logging
 from typing import List, Dict, Any, Tuple, Optional
 from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX
@@ -25,15 +27,15 @@ console = Console()
 
 # Initialize the config parser
 config = configparser.ConfigParser()
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config.ini')
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config.ini")
 config.read(config_path)
 
 # Load configurations
-AUTH_TOKEN = config['API']['auth_token']
-API_URL = config['API']['api_url']
-MODEL = config['API']['model']
-MAX_TOKENS = int(config['API']['max_tokens'])
-TEMPERATURE = float(config['API']['temperature'])
+AUTH_TOKEN = config["API"]["auth_token"]
+API_URL = config["API"]["api_url"]
+MODEL = config["API"]["model"]
+MAX_TOKENS = int(config["API"]["max_tokens"])
+TEMPERATURE = float(config["API"]["temperature"])
 
 # Theme configuration
 THEME = {
@@ -51,6 +53,7 @@ THEME = {
 PANEL_STYLE = f"bold {THEME['text']} on {THEME['background']}"
 BORDER_STYLE = THEME["accent"]
 HEADER_STYLE = f"bold {THEME['primary']}"
+
 
 class StyledCLIPrinter:
     def __init__(self, console: Console):
@@ -78,13 +81,16 @@ class StyledCLIPrinter:
         self.console.rule(title, style=BORDER_STYLE)
         self.console.print()
 
+
 def create_styled_table(title: Optional[str] = None) -> Table:
     table = Table(show_header=False, header_style=HEADER_STYLE, border_style=None, show_lines=False, box=None, padding=(2, 2), title=title)
     return table
 
+
 def create_styled_table_clean(title: Optional[str] = None) -> Table:
-    table = Table(show_header=False, header_style=None, border_style=None, show_lines=False, box=None, padding=(0, 1), title=title, style=None,expand=True)
+    table = Table(show_header=False, header_style=None, border_style=None, show_lines=False, box=None, padding=(0, 1), title=title, style=None, expand=True)
     return table
+
 
 def extract_tag_value(text: str, tag: str) -> str:
     """
@@ -102,6 +108,7 @@ def extract_tag_value(text: str, tag: str) -> str:
         console.log(f"Could not extract `{tag}` because {str(e)}\n")
         return ""
 
+
 def get_git_diff(staged: bool = True) -> str:
     """
     Get the git diff of staged or unstaged changes.
@@ -116,6 +123,7 @@ def get_git_diff(staged: bool = True) -> str:
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to get {'staged' if staged else 'unstaged'} diff: {e}")
         return ""
+
 
 def generate_commit_message(diff: str) -> str:
     """
@@ -168,6 +176,7 @@ def generate_commit_message(diff: str) -> str:
         console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
         return ""
 
+
 def parse_diff(diff: str) -> List[Dict[str, Any]]:
     """
     Parse the git diff to extract file names, additions, and deletions.
@@ -199,6 +208,7 @@ def parse_diff(diff: str) -> List[Dict[str, Any]]:
 
     return file_changes
 
+
 def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[Dict[str, Any]], panel_width: int = 100) -> Panel:
     """
     Display a diff panel for a single file.
@@ -211,6 +221,7 @@ def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[
     diff_panel = Panel(syntax, title=f"[bold blue]{filename}[/bold blue]", border_style="dark_khaki", padding=(1, 2), subtitle=footer, width=panel_width)
     return diff_panel
 
+
 def stage_files(files: List[str]):
     try:
         subprocess.run(["git", "add"] + files, check=True)
@@ -219,6 +230,7 @@ def stage_files(files: List[str]):
         logger.error(f"Failed to stage files: {e}")
         console.print(f"[bold red]Failed to stage files: {e}[/bold red]")
 
+
 def unstage_files(files: List[str]):
     try:
         subprocess.run(["git", "reset"] + files, check=True)
@@ -226,6 +238,20 @@ def unstage_files(files: List[str]):
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to unstage files: {e}")
         console.print(f"[bold red]Failed to unstage files: {e}[/bold red]")
+
+
+class CLIPrinter:
+    def __init__(self, console: Console):
+        self.console = console
+
+    def print_panel(self, message: str, title: str, style: str):
+        panel = Panel(Text(message, style=f"bold {style}"), title=title, border_style=style)
+        self.console.print(panel)
+
+    def print_divider(self):
+        self.console.print("\n")
+        self.console.rule(style="dark_khaki")
+        self.console.print("\n")
 
 def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
     """
@@ -242,12 +268,6 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subti
 
     for change in file_changes:
         table.add_row(change["file"], f"+{str(change['additions'])}", f"-{str(change['deletions'])}")
-
-    aligned_table = Align.center(table)
-    panel = Panel(aligned_table, title=f"[bold {color}]{title}[/bold {color}]", border_style=color, style=_panel_style, padding=(1, 2), expand=True, width=panel_width)
-
-    return Align.center(panel, vertical="middle")
-
 def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], subtitle: str, panel_width: int = 100):
     """
     Display the diff for each file in a separate panel.
@@ -271,13 +291,15 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
         panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width))
     summary_panel = get_diff_summary_panel(staged_file_changes, title="Staged Changes", subtitle=subtitle)
 
-    panels += [Text("\n"), Rule(style="bold dark_khaki"), Text("\n")]
-    panels.append(summary_panel)
+    # panels += [Text("\n"), Rule(style="bold dark_khaki"), Text("\n")]
+    # panels.append(summary_panel)
     grouped_panels = Group(*panels)
 
     panel = Panel(grouped_panels, title="[bold white]File Diffs[/bold white]", border_style="dark_khaki", style="white on rgb(39,40,34)", padding=(2, 4), expand=True)
 
-    console.print(Align.left(panel, vertical="middle"))
+    console.print(Align.center(panel, vertical="middle"))
+
+
 def parse_commit_log(log_output: str):
     """Parse the git log output into a list of commit details."""
     commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
@@ -305,17 +327,14 @@ def parse_commit_log(log_output: str):
 
     return parsed_commits
 
+
 def display_commit_history(num_commits: int = 5):
     """Display the commit history with the specified number of commits."""
     try:
         # Determine the number of commits to fetch
         num_commits_arg = ["-n", str(num_commits)] if num_commits > 0 else []
 
-        result = subprocess.run(
-            ["git", "log", "--pretty=format:%h %s", "--stat"] + num_commits_arg,
-            stdout=subprocess.PIPE,
-            check=True
-        )
+        result = subprocess.run(["git", "log", "--pretty=format:%h %s", "--stat"] + num_commits_arg, stdout=subprocess.PIPE, check=True)
         log_output = result.stdout.decode("utf-8")
         parsed_commits = parse_commit_log(log_output)
 
@@ -334,6 +353,7 @@ def display_commit_history(num_commits: int = 5):
         logger.error(f"Failed to get commit history: {e}")
         console.print(f"[bold {THEME['error']}]Failed to get commit history: {e}[/bold {THEME['error']}]")
 
+
 def configure_questionary_style():
     return questionary.Style(
         [
@@ -348,32 +368,47 @@ def configure_questionary_style():
         ]
     )
 
-class CLIPrinter:
-    def __init__(self, console: Console):
-        self.console = console
 
-    def print_panel(self, message: str, title: str, style: str):
-        panel = Panel(Text(message, style=f"bold {style}"), title=title, border_style=style)
-        self.console.print(panel)
+def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Table:
+    """
+    Create a table summarizing file changes.
+    """
+    table = Table(show_header=True, show_lines=True, box=None, padding=(0, 2))
+    table.add_column("File", justify="left", style="bold white", no_wrap=True)
+    table.add_column("Additions", justify="right", style="green")
+    table.add_column("Deletions", justify="right", style="red")
 
-    def print_divider(self):
-        self.console.print("\n")
-        self.console.rule(style="dark_khaki")
-        self.console.print("\n")
+    total_additions = 0
+    total_deletions = 0
+    for change in file_changes:
+        table.add_row(Padding(change["file"], (0, 3)), Padding(f"+{str(change['additions'])}", (0, 3)), Padding(f"-{str(change['deletions'])}", (0, 3)))
+        total_additions += change["additions"]
+        total_deletions += change["deletions"]
 
-def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[Dict[str, Any]],staged: bool = True,unstaged: bool = False):
+    # Add a summary row
+    table.add_row(Padding("Total", (0, 3)), Padding(f"+{str(total_additions)}", (0, 3)), Padding(f"-{str(total_deletions)}", (0, 3)), style="bold")
+
+    return table
+
+
+def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[Dict[str, Any]], staged: bool = True, unstaged: bool = False):
     """
     Display the status of unstaged and staged changes.
     """
-    subtitle = "Changes: Additions and Deletions"
-    unstaged_panel = get_diff_summary_panel(unstaged_changes, "Unstaged Changes", subtitle, _panel_style="")
-    staged_panel = get_diff_summary_panel(staged_changes, "Staged Changes", subtitle, _panel_style="")
+    panel_width = 50  # Set a fixed width for the panels
+
     if unstaged:
+        unstaged_table = get_diff_summary_table(unstaged_changes, "red")
+        unstaged_panel = Panel(Padding(unstaged_table,(1,1)),title_align="left", title="[bold red]Unstaged Changes", border_style="red", width=panel_width, expand=False)
         console.print(unstaged_panel)
+
     if staged:
+        staged_table = get_diff_summary_table(staged_changes, "green")
+        staged_panel = Panel(Padding(staged_table,(1,1)), title_align="left",title="[bold green]Staged Changes", border_style="green", width=panel_width, expand=False)
         console.print(staged_panel)
 
-def display_and_get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
+
+def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Display the status of unstaged and staged changes and return the diffs and changes.
     """
@@ -381,11 +416,10 @@ def display_and_get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[
     unstaged_diff = get_git_diff(staged=False)
     staged_changes = parse_diff(diff)
     unstaged_changes = parse_diff(unstaged_diff)
-    display_status(unstaged_changes, staged_changes,staged=True if staged_changes else False,unstaged=True if unstaged_changes else False)
 
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
-from rich.markdown import Markdown
+
 def main():
     """
     Main function to generate and commit a message based on staged changes.
@@ -394,13 +428,13 @@ def main():
     printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
 
-
-
     display_commit_history(3)
     while True:
         try:
+            printer.print_divider()
+            diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
+            display_status(unstaged_changes, staged_changes, staged=True if staged_changes else False, unstaged=True if unstaged_changes else False)
 
-            diff, unstaged_diff, staged_changes, unstaged_changes = display_and_get_status()
             staged_changes = parse_diff(diff)
             unstaged_changes = parse_diff(unstaged_diff)
 
@@ -411,12 +445,7 @@ def main():
                 choices.extend(["Review Staged Changes", "Unstage Files"])
             choices.extend(["Stage Files", "History", "Exit"])
 
-            printer.print_divider()
-            action = questionary.select(
-                f"What would you like to do?",
-                choices=choices,
-                style=questionary_style
-            ).unsafe_ask()
+            action = questionary.select(f"What would you like to do?", choices=choices, style=questionary_style).unsafe_ask()
             if action == "Generate commit for staged files":
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
@@ -450,15 +479,15 @@ def main():
                     console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
             elif action == "Review Staged Changes":
-                diff, unstaged_diff, staged_changes, unstaged_changes = display_and_get_status()
+                diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
 
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
                     continue
-                display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
                 staged_changes = parse_diff(diff)
                 unstaged_changes = parse_diff(unstaged_diff)
-                display_status(unstaged_changes, staged_changes, staged=True if staged_changes else False, unstaged=True if unstaged_changes else False)
+                display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
+                # display_status(unstaged_changes, staged_changes, staged=True if staged_changes else False, unstaged=True if unstaged_changes else False)
 
             elif action == "Stage Files":
                 if not unstaged_changes:
