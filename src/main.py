@@ -1,24 +1,27 @@
+#!/usr/bin/env python3
 import re
 import subprocess
 import requests
 import json
-from rich.console import Console
+from rich.console import Console, Group
 from rich.syntax import Syntax
 from rich.align import Align
-from typing import List, Dict, Any, Optional
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.panel import Panel
 from rich.table import Table
 from rich.rule import Rule
 from rich.text import Text
 import questionary
-from rich.console import Group
 import logging
+from typing import List, Dict, Any, Tuple, Optional
 from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX
 
+# Initialize logger and console for logging and output
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 console = Console()
+
+# Constants for API interaction
 AUTH_TOKEN = "Bearer sk-123"
 API_URL = "http://127.0.0.1:1234/v1/chat/completions"
 MODEL = "notes|nemotron:latest|61-219-64-161|o"
@@ -41,7 +44,6 @@ THEME = {
 PANEL_STYLE = f"bold {THEME['text']} on {THEME['background']}"
 BORDER_STYLE = THEME["accent"]
 HEADER_STYLE = f"bold {THEME['primary']}"
-
 
 class StyledCLIPrinter:
     def __init__(self, console: Console):
@@ -69,45 +71,45 @@ class StyledCLIPrinter:
         self.console.rule(title, style=BORDER_STYLE)
         self.console.print()
 
-
 def create_styled_table(title: Optional[str] = None) -> Table:
     table = Table(show_header=True, header_style=HEADER_STYLE, border_style=BORDER_STYLE, show_lines=True, box=None, padding=(0, 1), title=title)
     return table
 
-
 def extract_tag_value(text: str, tag: str) -> str:
+    """
+    Extracts the value enclosed within specified XML-like or bracket-like tags, case-insensitive.
+    """
     try:
         tag_lower = tag.lower()
-        pattern = rf"<({tag_lower})>(.*?)</\1>"
-        match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-        if match:
-            return match.group(2).strip()
-        pattern_brackets = rf"\[({tag_lower})\](.*?)\[/\1\]"
-        match_brackets = re.search(pattern_brackets, text, re.DOTALL | re.IGNORECASE)
-        if match_brackets:
-            return match_brackets.group(2).strip()
+        patterns = [rf"<({tag_lower})>(.*?)</\1>", rf"\[({tag_lower})\](.*?)\[/\1\]"]
+        for pattern in patterns:
+            match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+            if match:
+                return match.group(2).strip()
         return ""
     except Exception as e:
         console.log(f"Could not extract `{tag}` because {str(e)}\n")
         return ""
 
-
-def get_diff(diff_type: str) -> str:
-    logger.debug(f"Entering get_{diff_type}_diff function.")
+def get_git_diff(staged: bool = True) -> str:
+    """
+    Get the git diff of staged or unstaged changes.
+    """
+    logger.debug(f"Entering get_git_diff function. Staged: {staged}")
     try:
-        command = ["git", "diff"]
-        if diff_type == "staged":
-            command.append("--staged")
-        result = subprocess.run(command, stdout=subprocess.PIPE, check=True)
+        cmd = ["git", "diff", "--staged"] if staged else ["git", "diff"]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
         diff = result.stdout.decode("utf-8")
         logger.debug("Git diff retrieved successfully.")
         return diff
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to get {diff_type} diff: {e}")
+        logger.error(f"Failed to get {'staged' if staged else 'unstaged'} diff: {e}")
         return ""
 
-
 def generate_commit_message(diff: str) -> str:
+    """
+    Generate a commit message using an external service.
+    """
     logger.debug("Entering generate_commit_message function.")
     headers = {"Authorization": AUTH_TOKEN, "Content-Type": "application/json"}
     messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
@@ -150,11 +152,14 @@ def generate_commit_message(diff: str) -> str:
             console.log("Commit message generated successfully.")
             return commit_message_text
     except Exception as e:
+        logger.error(f"Failed to generate commit message: {e}")
         console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
         return ""
 
-
 def parse_diff(diff: str) -> List[Dict[str, Any]]:
+    """
+    Parse the git diff to extract file names, additions, and deletions.
+    """
     file_changes = []
     file_pattern = re.compile(r"diff --git a/(.+?) b/(.+)")
     addition_pattern = re.compile(r"^\+[^+].*")
@@ -182,8 +187,10 @@ def parse_diff(diff: str) -> List[Dict[str, Any]]:
 
     return file_changes
 
-
 def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[Dict[str, Any]], panel_width: int = 100) -> Panel:
+    """
+    Display a diff panel for a single file.
+    """
     diff_text = "\n".join(diff_lines)
     syntax = Syntax(diff_text, "diff", theme="monokai", line_numbers=True)
     additions = next((change["additions"] for change in file_changes if change["file"] == filename), 0)
@@ -191,7 +198,6 @@ def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[
     footer = f"Additions: +{additions}, Deletions: -{deletions}"
     diff_panel = Panel(syntax, title=f"[bold blue]{filename}[/bold blue]", border_style="dark_khaki", padding=(1, 2), subtitle=footer, width=panel_width)
     return diff_panel
-
 
 def stage_files(files: List[str]):
     try:
@@ -201,7 +207,6 @@ def stage_files(files: List[str]):
         logger.error(f"Failed to stage files: {e}")
         console.print(f"[bold red]Failed to stage files: {e}[/bold red]")
 
-
 def unstage_files(files: List[str]):
     try:
         subprocess.run(["git", "reset"] + files, check=True)
@@ -210,12 +215,14 @@ def unstage_files(files: List[str]):
         logger.error(f"Failed to unstage files: {e}")
         console.print(f"[bold red]Failed to unstage files: {e}[/bold red]")
 
-
-def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, panel_width: int = 100, _panel_style=PANEL_STYLE) -> Panel:
-    table = create_styled_table()
-    table.add_column("File", justify="left", style=THEME["primary"], no_wrap=True)
-    table.add_column("Additions", justify="right", style=THEME["success"])
-    table.add_column("Deletions", justify="right", style=THEME["error"])
+def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
+    """
+    Display the staged changes in a neat panel.
+    """
+    table = Table(show_header=True, header_style="bold magenta", show_lines=False, box=None)
+    table.add_column("File", justify="left", style="cyan", no_wrap=True)
+    table.add_column("Additions", justify="right", style="green")
+    table.add_column("Deletions", justify="right", style="red")
 
     for change in file_changes:
         table.add_row(change["file"], f"+{str(change['additions'])}", f"-{str(change['deletions'])}")
@@ -225,8 +232,10 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, panel
 
     return Align.center(panel, vertical="middle")
 
-
-def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], panel_width: int = 100):
+def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], subtitle: str, panel_width: int = 100):
+    """
+    Display the diff for each file in a separate panel.
+    """
     file_pattern = re.compile(r"diff --git a/(.+?) b/(.+)")
     current_file = None
     current_diff = []
@@ -236,20 +245,23 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], pan
         file_match = file_pattern.match(line)
         if file_match:
             if current_file:
-                panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width))
+                panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width))
             current_file = file_match.group(2)
             current_diff = [line]
         else:
             current_diff.append(line)
 
     if current_file:
-        panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width))
+        panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width))
+    summary_panel = get_diff_summary_panel(staged_file_changes, title="Staged Changes", subtitle=subtitle)
 
+    panels += [Text("\n"), Rule(style="bold dark_khaki"), Text("\n")]
+    panels.append(summary_panel)
     grouped_panels = Group(*panels)
-    panel = Panel(grouped_panels, title=f"[bold {THEME['primary']}]File Diffs[/bold {THEME['primary']}]", border_style=BORDER_STYLE, style=PANEL_STYLE, padding=(2, 4), expand=True)
 
-    console.print(Align.center(panel, vertical="middle"))
+    panel = Panel(grouped_panels, title="[bold white]File Diffs[/bold white]", border_style="dark_khaki", style="white on rgb(39,40,34)", padding=(2, 4), expand=True)
 
+    console.print(Align.left(panel, vertical="middle"))
 
 def display_commit_history(num_commits=5):
     try:
@@ -289,7 +301,6 @@ def display_commit_history(num_commits=5):
         logger.error(f"Failed to get commit history: {e}")
         console.print(f"[bold {THEME['error']}]Failed to get commit history: {e}[/bold {THEME['error']}]")
 
-
 def configure_questionary_style():
     return questionary.Style(
         [
@@ -304,42 +315,75 @@ def configure_questionary_style():
         ]
     )
 
+class CLIPrinter:
+    def __init__(self, console: Console):
+        self.console = console
 
-# Update the main function to use the new styling
-def status():
-    diff = get_diff("staged")
-    unstaged_diff = get_diff("unstaged")
+    def print_panel(self, message: str, title: str, style: str):
+        panel = Panel(Text(message, style=f"bold {style}"), title=title, border_style=style)
+        self.console.print(panel)
+
+    def print_divider(self):
+        self.console.print("\n")
+        self.console.rule(style="dark_khaki")
+        self.console.print("\n")
+
+def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[Dict[str, Any]]):
+    """
+    Display the status of unstaged and staged changes.
+    """
+    subtitle = "Changes: Additions and Deletions"
+    unstaged_panel = get_diff_summary_panel(unstaged_changes, "Unstaged Changes", subtitle, _panel_style="")
+    staged_panel = get_diff_summary_panel(staged_changes, "Staged Changes", subtitle, _panel_style="")
+
+    console.print(unstaged_panel)
+    console.print(staged_panel)
+
+def display_and_get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    Display the status of unstaged and staged changes and return the diffs and changes.
+    """
+    diff = get_git_diff(staged=True)
+    unstaged_diff = get_git_diff(staged=False)
     staged_changes = parse_diff(diff)
     unstaged_changes = parse_diff(unstaged_diff)
+
+    display_status(unstaged_changes, staged_changes)
 
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
 
-def display_status(unstaged_changes, staged_changes):
-    unstaged_panel = get_diff_summary_panel(unstaged_changes, "Unstaged Changes", _panel_style="")
-    staged_panel = get_diff_summary_panel(staged_changes, "Staged Changes")
-    console.print(unstaged_panel)
-    console.print(staged_panel)
-
-
-def main(console):
-    printer = StyledCLIPrinter(console)
+def main():
+    """
+    Main function to generate and commit a message based on staged changes.
+    """
+    printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
-    diff, unstaged_diff, staged_changes, unstaged_changes = status()
-    display_status(unstaged_changes, staged_changes)
+
+    logger.debug("Entering main function.")
+    diff, unstaged_diff, staged_changes, unstaged_changes = display_and_get_status()
+
     while True:
-
         try:
-            diff, unstaged_diff, staged_changes, unstaged_changes = status()
-
-            printer.print_divider("Git Assistant")
-            action = questionary.select("What would you like to do?", choices=["Generate commit for staged files", "Review Staged Changes", "Stage Files", "Unstage Files", "History", "Exit"], style=questionary_style).unsafe_ask()
+            printer.print_divider()
+            action = questionary.select(
+                "What would you like to do?",
+                choices=[
+                    "Generate commit for staged files",
+                    "Review Staged Changes",
+                    "Stage Files",
+                    "Unstage Files",
+                    "History",
+                    "Exit"
+                ],
+                style=questionary_style
+            ).unsafe_ask()
 
             if action == "Generate commit for staged files":
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
                     continue
-                printer.print_divider()
+
                 commit_message = generate_commit_message(diff)
                 if commit_message:
                     printer.print_divider()
@@ -366,12 +410,12 @@ def main(console):
                     console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
             elif action == "Review Staged Changes":
-                diff, unstaged_diff, staged_changes, unstaged_changes = status()
+                diff, unstaged_diff, staged_changes, unstaged_changes = display_and_get_status()
 
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
                     continue
-                display_file_diffs(diff, staged_changes)
+                display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
                 display_status(unstaged_changes, staged_changes)
 
             elif action == "Stage Files":
@@ -401,7 +445,5 @@ def main(console):
             console.print("\n[bold red]Process interrupted by user. Exiting...[/bold red]")
             break
 
-
 if __name__ == "__main__":
-    console = Console()
-    main(console)
+    main()
