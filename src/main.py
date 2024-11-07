@@ -509,10 +509,11 @@ def main():
             elif action == "Exit":
                 console.print("[bold green]Exiting...[/bold green]")
                 break
+            continue
 
         except KeyboardInterrupt:
             console.print("\n[bold red]Process interrupted by user. Exiting...[/bold red]")
-            pass
+            console.print("Goodbye.")
 
 
 if __name__ == "__main__":
