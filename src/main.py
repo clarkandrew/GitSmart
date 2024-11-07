@@ -386,7 +386,7 @@ def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Ta
         total_deletions += change["deletions"]
 
     # Add a summary row
-    table.add_row(Padding("Total", (0, 3)), Padding(f"+{str(total_additions)}", (0, 3)), Padding(f"-{str(total_deletions)}", (0, 3)), style="bold")
+    # table.add_row(Padding("Total", (0, 1)), Padding(f"+{str(total_additions)}", (0, 1)), Padding(f"-{str(total_deletions)}", (0, 1)), style="bold")
 
     return table
 
@@ -416,8 +416,6 @@ def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     unstaged_changes = parse_diff(unstaged_diff)
 
     return diff, unstaged_diff, staged_changes, unstaged_changes
-
-
 
 def load_gitignore():
     """
@@ -467,7 +465,7 @@ def main():
             choices = []
             if staged_changes:
                 choices.append(f"Generate commit for staged files ({num_staged_files})")
-                choices.extend(["Review Staged Changes", "Unstage Files"])
+                choices.extend(["Review Changes", "Unstage Files"])
             choices.extend(["Stage Files", "Ignore Files", "History", "Exit"])
 
             action = questionary.select(f"What would you like to do?", choices=choices, style=questionary_style).unsafe_ask()
@@ -503,16 +501,20 @@ def main():
                     logger.error("Failed to generate a commit message.")
                     console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
-            elif action == "Review Staged Changes":
-                diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
+            elif action == "Review Changes":
+                review_choices = []
+                if staged_changes:
+                    review_choices.append("Staged")
+                if unstaged_changes:
+                    review_choices.append("Unstaged")
+                review_action = questionary.select("Which changes would you like to review?", choices=review_choices, style=questionary_style).unsafe_ask()
 
-                if not diff:
-                    console.print("[bold red]No staged changes detected.[/bold red]")
-                    continue
-                staged_changes = parse_diff(diff)
-                unstaged_changes = parse_diff(unstaged_diff)
-                display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
-                # display_status(unstaged_changes, staged_changes, staged=True if staged_changes else False, unstaged=True if unstaged_changes else False)
+                if review_action == "Staged":
+                    # Display the diff for staged changes
+                    display_file_diffs(diff, staged_changes, subtitle="Staged Changes")
+                elif review_action == "Unstaged":
+                    # Display the diff for unstaged changes
+                    display_file_diffs(unstaged_diff, unstaged_changes, subtitle="Unstaged Changes")
 
             elif action == "Stage Files":
                 if not unstaged_changes:
@@ -521,6 +523,7 @@ def main():
                 files_to_stage = questionary.checkbox("Select files to stage:", choices=[change["file"] for change in unstaged_changes]).unsafe_ask()
                 if files_to_stage:
                     stage_files(files_to_stage)
+                    console.print(f"[bold green]Staged files: {', '.join(files_to_stage)}[/bold green]")
 
             elif action == "Unstage Files":
                 if not staged_changes:
@@ -529,10 +532,11 @@ def main():
                 files_to_unstage = questionary.checkbox("Select files to unstage:", choices=[change["file"] for change in staged_changes]).unsafe_ask()
                 if files_to_unstage:
                     unstage_files(files_to_unstage)
+                    console.print(f"[bold green]Unstaged files: {', '.join(files_to_unstage)}[/bold green]")
 
             elif action == "Ignore Files":
                 ignored_files = load_gitignore()
-                all_files = [change["file"] for change in unstaged_changes + staged_changes]
+                all_files = get_tracked_files()
                 choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
                 selected_files = questionary.checkbox("Select files to ignore:", choices=choices).unsafe_ask()
                 save_gitignore(selected_files)
@@ -540,14 +544,16 @@ def main():
 
             elif action == "History":
                 display_commit_history(0)
+                console.print("[bold green]Displayed commit history.[/bold green]")
+
             elif action == "Exit":
                 console.print("[bold green]Exiting...[/bold green]")
                 break
-            continue
 
         except KeyboardInterrupt:
             console.print("\n[bold red]Process interrupted by user. Exiting...[/bold red]")
             console.print("Goodbye.")
+            break
 
 if __name__ == "__main__":
     main()
