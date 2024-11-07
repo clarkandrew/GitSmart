@@ -233,8 +233,8 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subti
         color = "red"
     else:
         color = "green"
-    table = Table(show_header=True, header_style=f"bold {color}",style=f"italic {color}", show_lines=False, box=None)
-    table.add_column("File", justify="left", style="cyan", no_wrap=True)
+    table = Table(show_header=False, header_style=f"bold {color}",style=f"italic {color}", show_lines=False, box=None)
+    table.add_column("File", justify="left", style="bold white", no_wrap=True)
     table.add_column("Additions", justify="right", style="green")
     table.add_column("Deletions", justify="right", style="red")
 
@@ -242,7 +242,7 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subti
         table.add_row(change["file"], f"+{str(change['additions'])}", f"-{str(change['deletions'])}")
 
     aligned_table = Align.center(table)
-    panel = Panel(aligned_table, title=f"[bold {THEME['text']}]{title}[/bold {THEME['text']}]", border_style=BORDER_STYLE, style=_panel_style, padding=(1, 2), expand=True, width=panel_width)
+    panel = Panel(aligned_table, title=f"[bold {color}]{title}[/bold {color}]", border_style=color, style=_panel_style, padding=(1, 2), expand=True, width=panel_width)
 
     return Align.center(panel, vertical="middle")
 
