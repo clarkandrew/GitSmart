@@ -598,7 +598,15 @@ def get_tracked_files():
     """
     result = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
     return result.stdout.splitlines()
-
+def get_repo_name():
+    """
+    Function to get the repository name.
+    """
+    try:
+        repo_name = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], universal_newlines=True).strip().split('/')[-1]
+        return repo_name
+    except subprocess.CalledProcessError:
+        return "Unknown Repository"
 def main():
     """
     Main function to generate and commit a message based on staged changes.
@@ -606,6 +614,8 @@ def main():
     console.print(Markdown("# c-01"))
     printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
+
+    repo_name = get_repo_name()  # Function to get the repository name
 
     display_commit_history(3)
     while True:
@@ -616,16 +626,39 @@ def main():
 
             num_staged_files = len(staged_changes)
             choices = []
+
             if staged_changes:
                 choices.append(f"Generate commit for staged files ({num_staged_files})")
-                choices.append("Unstage Files")
-            if unstaged_changes:
-                choices.append("Stage Files")
-            if staged_changes or unstaged_changes:
                 choices.append("Review Changes")
-            choices.extend(["Ignore Files", "History", "Exit"])
+                choices.append("")
+                choices.append("Unstage Files")
+                choices.append("Stage Files")
+                choices.append("")
+                choices.append("Ignore Files")
+                choices.append("")
+                choices.append(f"{repo_name} History")
+                choices.append("Exit")
+            elif unstaged_changes:
+                choices.append("Review Changes")
+                choices.append("")
+                choices.append("Stage Files")
+                choices.append("")
+                choices.append("Ignore Files")
+                choices.append("")
+                choices.append(f"{repo_name} History")
+                choices.append("Exit")
+            else:
+                choices.append("Ignore Files")
+                choices.append("")
+                choices.append(f"{repo_name} History")
+                choices.append("Exit")
 
-            action = questionary.select(f"What would you like to do?", choices=choices, style=questionary_style).unsafe_ask()
+            # Remove empty strings from choices
+            choices = [choice for choice in choices if choice]
+
+            total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
+            total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
+            action = questionary.select(f"{repo_name} +{total_additions} additions, -{total_deletions} deletions | What would you like to do?", choices=choices, style=questionary_style).unsafe_ask()
             if action == f"Generate commit for staged files ({num_staged_files})":
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
@@ -696,7 +729,7 @@ def main():
                 save_gitignore(selected_files)
                 console.print("[bold green]Updated .gitignore file.[/bold green]")
 
-            elif action == "History":
+            elif action == f"{repo_name} History":
                 display_commit_history(0)
                 console.print("[bold green]Displayed commit history.[/bold green]")
 
