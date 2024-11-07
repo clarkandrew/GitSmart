@@ -388,7 +388,7 @@ def main():
     printer = CLIPrinter(console)
     questionary_style = configure_questionary_style()
 
-    logger.debug("Entering main function.")
+
 
     while True:
         try:
@@ -404,12 +404,12 @@ def main():
                 choices.extend(["Review Staged Changes", "Unstage Files"])
             choices.extend(["Stage Files", "History", "Exit"])
 
+            printer.print_divider()
             action = questionary.select(
                 f"What would you like to do?",
                 choices=choices,
                 style=questionary_style
             ).unsafe_ask()
-
             if action == "Generate commit for staged files":
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
