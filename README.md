@@ -1,15 +1,15 @@
-# COMIT
+# C0MIT
 
-COMIT is a command-line tool designed to assist with Git operations, such as generating commit messages, staging and unstaging files, and displaying commit history. It leverages the power of the `rich` library for styled console output and `questionary` for interactive prompts, providing a user-friendly and visually appealing interface.
+C0MIT is a powerful command-line tool designed to streamline your Git workflow. It assists with generating commit messages, staging and unstaging files, and displaying commit history. Leveraging the `rich` library for styled console output and `questionary` for interactive prompts, C0MIT provides a user-friendly and visually appealing interface.
 
 ## Installation
 
-To install COMIT, follow these steps:
+To install C0MIT, follow these steps:
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/comit.git
-    cd comit
+    git clone https://github.com/yourusername/c0mit.git
+    cd c0mit
     ```
 
 2. Install the required dependencies:
@@ -19,7 +19,7 @@ To install COMIT, follow these steps:
 
 ## Usage
 
-To use COMIT, simply run the `main.py` script:
+To use C0MIT, simply run the `main.py` script:
 
 ```sh
 python src/main.py
@@ -57,7 +57,7 @@ You will be presented with a menu of options to choose from:
 
 ## Configuration
 
-COMIT can be configured using the following options:
+C0MIT can be configured using the following options:
 
 - **API Token**: Set the `AUTH_TOKEN` variable in `src/main.py` with your API token.
     ```python
@@ -94,12 +94,12 @@ COMIT can be configured using the following options:
 - **Review Staged Changes**: Display a detailed view of the changes that are currently staged.
 - **Stage and Unstage Files**: Easily stage or unstage files for commit.
 - **Display Commit History**: View the commit history with details of additions and deletions.
-- **Styled Console Output**: Enjoy a visually appealing interface with styled console output using the `rich` library.
-- **Interactive Prompts**: Use interactive prompts powered by `questionary` for a seamless user experience.
+- **Capture the Full Image with Chain-of-thought prompts**: Use our masteful LLM prompts or customize it with your own for a seamless user experience.
+- **Intuitive and Simply CLI**: Enjoy a visually appealing interface with styled console output using the `rich` library.
 
 ## Contributing
 
-We welcome contributions to COMIT! If you would like to contribute, please follow these guidelines:
+We welcome contributions to C0MIT! If you would like to contribute, please follow these guidelines:
 
 1. Fork the repository.
 2. Create a new branch for your feature or bugfix.
@@ -112,3 +112,11 @@ Please ensure that your code adheres to the existing style and includes appropri
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+
+## Contact
+
+For any questions or feedback, please reach out to us at [your-email@example.com](mailto:your-email@example.com).
+
+## Acknowledgments
+
+We would like to thank the contributors and the open-source community for their support and contributions to this project.
