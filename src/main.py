@@ -2,6 +2,7 @@
 import re
 import subprocess
 import requests
+import os
 import json
 from rich.console import Console, Group
 from rich.syntax import Syntax
@@ -24,7 +25,8 @@ console = Console()
 
 # Initialize the config parser
 config = configparser.ConfigParser()
-config.read('config.ini')
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config.ini')
+config.read(config_path)
 
 # Load configurations
 AUTH_TOKEN = config['API']['auth_token']
@@ -419,6 +421,8 @@ def main():
                 if not diff:
                     console.print("[bold red]No staged changes detected.[/bold red]")
                     continue
+                # Display the diff for staged changes
+                display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
 
                 commit_message = generate_commit_message(diff)
                 if commit_message:
@@ -480,6 +484,7 @@ def main():
         except KeyboardInterrupt:
             console.print("\n[bold red]Process interrupted by user. Exiting...[/bold red]")
             pass
+
 
 if __name__ == "__main__":
     main()
