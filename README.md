@@ -14,56 +14,21 @@
 
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
----
+### Key Features
 
-![C0MIT Overview Image](assets/1.png)
+- **AI-Powered Commit Messages**: Automatically generate meaningful and standardized commit messages based on your code changes.
+- **Track Changes**: Maintain a detailed history of modifications to your codebase.
+- **Revert to Previous Versions**: Easily roll back to earlier states of your project.
+- **Branch and Merge**: Experiment with new ideas without affecting the main project branch.
+- **Collaborate Seamlessly**: Work with others by merging changes and resolving conflicts efficiently.
 
-## Bring Your Own LLM and Leverage Git
+### Why C0MMIT
 
-Use the version control we all know and love to automate and streamline your workflow:
-- **Track Changes**: Keep a history of modifications.
-- **Revert to Previous Versions**: Easily roll back to earlier states when needed.
-- **Branch and Merge**: Experiment with new ideas without affecting the main project.
-- **Collaborate**: Work with others seamlessly by merging changes and resolving conflicts.
+- **Enhanced Productivity**: Save time by automating the creation of commit messages.
+- **Improved Collaboration**: Ensure consistent and clear commit messages, making it easier for team members to understand changes.
+- **Better Version Control**: Maintain a clean and organized commit history, facilitating easier project management and debugging.
 
----
-
-## Why You'd Need C0MIT
-
-#### **Save Time**
-- **Automated Commit Messages**: Eliminate the need to manually write commit messages.
-
-#### **Ensure Consistency**
-- **Standardized Messages**: Maintain a uniform style across all your commit messages.
-
-#### **Improve Clarity**
-- **Accurate Summaries**: Generate messages that accurately reflect your code changes.
-
-#### **Boost Productivity**
-- **Interactive CLI**: Streamline your Git operations with an easy-to-use interface.
-
-#### **Leverage AI Technology**
-- **Smart Insights**: Utilize AI models to interpret and summarize code differences.
-
----
-
-### Who Can Benefit from C0MIT?
-
-- **Newcomers to Git**: Simplify the process of creating meaningful commit messages.
-- **Experienced Developers**: Save time and maintain consistency in commit histories.
-- **Teams**: Enhance collaboration through clear and standardized commit logs.
-- **Anyone**: Who wants to efficiently track changes in files and folders using AI.
-
----
-
-## Quick Start Guide
-
-### Prerequisites
-
-- [Python 3.6+](https://python.org): Ensure Python is installed on your system.
-- [Git](https://git-scm.com): Required for integrating C0MIT with your Git repositories.
-
-### Installation
+### Getting Started
 
 1. Clone the repository:
    ```bash
