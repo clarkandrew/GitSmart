@@ -22,7 +22,7 @@
 
 ## Table of Contents
 
-- [Use Cases](#target-use-cases-and-user-personas)
+- [Target Use Cases and User Personas](#target-use-cases-and-user-personas)
 - [Quick Start Guide](#quick-start-guide)
 - [Version History and Changelog](#version-history-and-changelog)
 - [Release Roadmap](#release-roadmap)
@@ -54,6 +54,13 @@
 - Teams aiming for better collaboration through clear commit histories.
 - Developers who frequently forget to write detailed commit messages.
 
+### User Personas
+
+- **Solo Developers**: Streamline your workflow and maintain a clean commit history.
+- **Development Teams**: Ensure consistency and clarity in commit messages across the team.
+- **Open Source Contributors**: Contribute to projects with standardized commit messages.
+- **Project Managers**: Easily track changes and understand the context of commits.
+
 ## Quick Start Guide
 
 ### Prerequisites
@@ -66,29 +73,29 @@
 
 1. **Clone the Repository**
 
-   ```bash
-   git clone https://github.com/yourusername/c-01.git
-   cd c-01
-   ```
+    ```bash
+    git clone https://github.com/yourusername/c-01.git
+    cd c-01
+    ```
 
 2. **Install Dependencies**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 3. **Configure the Application**
 
-   Create a `config.ini` file in the root directory:
+    Create a `config.ini` file in the root directory:
 
-   ```ini
-   [API]
-   auth_token = YOUR_API_TOKEN
-   api_url = https://api.yourservice.com/v1/chat/completions
-   model = your-model-name
-   max_tokens = 500
-   temperature = 0.7
-   ```
+    ```ini
+    [API]
+    auth_token = YOUR_API_TOKEN
+    api_url = https://api.yourservice.com/v1/chat/completions
+    model = your-model-name
+    max_tokens = 500
+    temperature = 0.7
+    ```
 
 ### Running c-01
 
@@ -115,38 +122,17 @@ Follow the interactive prompts to generate and commit your changes.
 
 ---
 
-## Release Roadmap
-
-### Upcoming Features
-
-- **1.1.0**
-
-  - Integration with multiple AI service providers.
-  - Customizable commit templates.
-
-- **1.2.0**
-
-  - GUI version for non-CLI users.
-  - Enhanced diff visualization with syntax highlighting.
-
-- **1.3.0**
-
-  - Support for non-git version control systems.
-  - Multi-language support for commit messages.
-
----
-
 ## Detailed Installation Procedures
 
 ### Windows
 
 1. **Install Python**
 
-   Download and install Python from the [official website](https://www.python.org/downloads/windows/).
+    Download and install Python from the [official website](https://www.python.org/downloads/windows/).
 
 2. **Install Git**
 
-   Download and install Git from the [official website](https://git-scm.com/download/win).
+    Download and install Git from the [official website](https://git-scm.com/download/win).
 
 3. **Follow the Quick Start Guide**
 
@@ -154,11 +140,11 @@ Follow the interactive prompts to generate and commit your changes.
 
 1. **Install Python and Git**
 
-   Use [Homebrew](https://brew.sh/) to install:
+    Use [Homebrew](https://brew.sh/) to install:
 
-   ```bash
-   brew install python git
-   ```
+    ```bash
+    brew install python git
+    ```
 
 2. **Follow the Quick Start Guide**
 
@@ -166,12 +152,12 @@ Follow the interactive prompts to generate and commit your changes.
 
 1. **Install Python and Git**
 
-   For Debian/Ubuntu:
+    For Debian/Ubuntu:
 
-   ```bash
-   sudo apt-get update
-   sudo apt-get install python3 python3-pip git
-   ```
+    ```bash
+    sudo apt-get update
+    sudo apt-get install python3 python3-pip git
+    ```
 
 2. **Follow the Quick Start Guide**
 
@@ -206,6 +192,27 @@ diff = get_git_diff(staged=True)
 commit_message = generate_commit_message(diff)
 print(commit_message)
 ```
+
+---
+
+## Release Roadmap
+
+### Upcoming Features
+
+- **1.1.0**
+
+  - Integration with multiple AI service providers.
+  - Customizable commit templates.
+
+- **1.2.0**
+
+  - GUI version for non-CLI users.
+  - Enhanced diff visualization with syntax highlighting.
+
+- **1.3.0**
+
+  - Support for non-git version control systems.
+  - Multi-language support for commit messages.
 
 ---
 
@@ -263,19 +270,19 @@ print(commit_message)
 
 1. **Pull the Latest Changes**
 
-   ```bash
-   git pull origin main
-   ```
+    ```bash
+    git pull origin main
+    ```
 
 2. **Update Dependencies**
 
-   ```bash
-   pip install --upgrade -r requirements.txt
-   ```
+    ```bash
+    pip install --upgrade -r requirements.txt
+    ```
 
 3. **Update Configuration**
 
-   - Add any new configuration options to your `config.ini`.
+    - Add any new configuration options to your `config.ini`.
 
 ---
 
@@ -286,21 +293,21 @@ We welcome contributions!
 1. **Fork the Repository**
 2. **Create a Feature Branch**
 
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
 
 3. **Commit Your Changes**
 
-   ```bash
-   git commit -m "Description of your changes"
-   ```
+    ```bash
+    git commit -m "Description of your changes"
+    ```
 
 4. **Push to Your Fork**
 
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+    ```bash
+    git push origin feature/your-feature-name
+    ```
 
 5. **Open a Pull Request**
 
@@ -312,22 +319,22 @@ We welcome contributions!
 
 1. **Clone Your Fork**
 
-   ```bash
-   git clone https://github.com/yourusername/c-01.git
-   cd c-01
-   ```
+    ```bash
+    git clone https://github.com/yourusername/c-01.git
+    cd c-01
+    ```
 
 2. **Install Development Dependencies**
 
-   ```bash
-   pip install -r dev-requirements.txt
-   ```
+    ```bash
+    pip install -r dev-requirements.txt
+    ```
 
 3. **Run Tests**
 
-   ```bash
-   pytest
-   ```
+    ```bash
+    pytest
+    ```
 
 ---
 
