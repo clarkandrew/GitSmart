@@ -15,40 +15,23 @@
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
 ---
-<rewrite_this>
 
 ![C0MIT Overview Image](assets/1.png)
 
 ## Bring Your Own LLM and Leverage Git
 
-<rewrite_this>
-
-![C0MIT Overview Image](assets/1.png)
-
-## Bring Your Own LLM and Leverage Git
-
-<rewrite_this>
-Enhance the version control tool we all know and love with intelligent automation:
-</rewrite_this>
+Use the version control we all know and love to automate and streamline your workflow:
 - **Track Changes**: Keep a history of modifications.
-- **Revert to Previous Versions**: Roll back to earlier states.
+- **Revert to Previous Versions**: Easily roll back to earlier states when needed.
 - **Branch and Merge**: Experiment with new ideas without affecting the main project.
 - **Collaborate**: Work with others seamlessly by merging changes and resolving conflicts.
-
-</rewrite_this>
-- **Track Changes**: Keep a history of modifications.
-- **Revert to Previous Versions**: Roll back to earlier states.
-- **Branch and Merge**: Experiment with new ideas without affecting the main project.
-- **Collaborate**: Work with others seamlessly by merging changes and resolving conflicts.
-
-</rewrite_this>
 
 ---
 
-### Why you'd need `C0MIT`
+## Why You'd Need C0MIT
 
 #### **Save Time**
-- **Automated Commit Messages**: Eliminate the need to write commit messages manually.
+- **Automated Commit Messages**: Eliminate the need to manually write commit messages.
 
 #### **Ensure Consistency**
 - **Standardized Messages**: Maintain a uniform style across all your commit messages.
@@ -77,20 +60,14 @@ Enhance the version control tool we all know and love with intelligent automatio
 
 ### Prerequisites
 
-- **Python**: Version 3.6 or higher.
-- **Git**: Installed and configured on your system.
-- **API Access**: An API key from our AI service provider.
+- [Python 3.6+](https://python.org): Ensure Python is installed on your system.
+- [Git](https://git-scm.com): Required for integrating C0MIT with your Git repositories.
 
 ### Installation
 
-1. **Clone the Repository**
-
-   Open your terminal and run:
-
+1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/C0MIT.git
-   cd C0MIT
-   ```
 
 2. **Install Dependencies**
 
