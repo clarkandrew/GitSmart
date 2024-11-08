@@ -405,8 +405,8 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
     if panels:
         summary_panel = get_diff_summary_panel(staged_file_changes, title="Staged Changes", subtitle=subtitle)
         grouped_panels = Group(*panels)
-        panel = Panel(grouped_panels, title="[bold white]File Diffs[/bold white]", border_style="dark_khaki", style="white on rgb(39,40,34)", padding=(2, 4), expand=True)
-        console.print(panel)
+        # panel = Panel(, title="[bold white]File Diffs[/bold white]", border_style="", style="", padding=(2, 4), expand=True)
+        console.print(grouped_panels)
     else:
         console.print("[bold yellow]No diffs to display.[/bold yellow]")
 def parse_commit_log(log_output: str):
@@ -599,60 +599,6 @@ def get_repo_name() -> str:
     except subprocess.CalledProcessError:
         return "Unknown Repository"
 
-def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> (str, List[str]):
-    """
-    Determine the appropriate menu title and options based on the current repository state.
-
-    Args:
-        staged_changes (List[Dict[str, Any]]): List of staged changes.
-        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
-
-    Returns:
-        Tuple[str, List[str]]: A tuple containing the menu title and the list of menu options.
-    """
-    num_staged_files = len(staged_changes)
-    choices = []
-    title = "Select an Action:"
-
-    if staged_changes and unstaged_changes:
-        title = "Repository Status: Staged and Unstaged Changes Detected"
-        choices.extend([
-            f"Commit Staged Files ({num_staged_files})",
-            "Review Changes",
-            "Stage Additional Files",
-            "Unstage Files",
-            "Ignore Files",
-            "View Commit History",
-            "Exit"
-        ])
-    elif staged_changes:
-        title = "Repository Status: Staged Changes Detected"
-        choices.extend([
-            f"Commit Staged Files ({num_staged_files})",
-            "Review Changes",
-            "Unstage Files",
-            "Ignore Files",
-            "View Commit History",
-            "Exit"
-        ])
-    elif unstaged_changes:
-        title = "Repository Status: Unstaged Changes Detected"
-        choices.extend([
-            "Review Changes",
-            "Stage Files",
-            "Ignore Files",
-            "View Commit History",
-            "Exit"
-        ])
-    else:
-        title = "Repository Status: Up to Date"
-        choices.extend([
-            "Ignore Files",
-            "View Commit History",
-            "Exit"
-        ])
-
-    return title, choices
 
 def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
     """
@@ -735,6 +681,49 @@ def handle_ignore_files():
     save_gitignore(selected_files)
     console.print("[bold green]Updated .gitignore file.[/bold green]")
 
+
+def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> Tuple[str, List[str]]:
+    """
+    Determine the appropriate menu title and options based on the current repository state.
+
+    Args:
+        staged_changes (List[Dict[str, Any]]): List of staged changes.
+        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
+
+    Returns:
+        Tuple[str, List[str]]: A tuple containing the menu title and the list of menu options.
+    """
+    num_staged_files = len(staged_changes)
+    choices = ["Ignore Files", "View Commit History", "Exit"]
+    title = "Repository Status: Up to Date"
+
+    if staged_changes and unstaged_changes:
+        title = "Repository Status: Staged and Unstaged Changes Detected"
+        choices = [
+            f"Generate Commit for Staged Changes ({num_staged_files})",
+            "Review Changes",
+            "Stage Files",
+            "Unstage Files",
+            *choices
+        ]
+    elif staged_changes:
+        title = "Repository Status: Staged Changes Detected"
+        choices = [
+            f"Generate Commit for Staged Changes ({num_staged_files})",
+            "Review Changes",
+            "Unstage Files",
+            *choices
+        ]
+    elif unstaged_changes:
+        title = "Repository Status: Unstaged Changes Detected"
+        choices = [
+            "Review Changes",
+            "Stage Files",
+            *choices
+        ]
+
+    return title, choices
+
 def main():
     """
     Main function to generate and commit a message based on staged changes.
@@ -746,6 +735,7 @@ def main():
 
     display_commit_history(3)
     while True:
+
         try:
             printer.print_divider()
             diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
@@ -756,20 +746,24 @@ def main():
 
             console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
 
-            title,choices = get_menu_options(staged_changes, unstaged_changes)
+            title, choices = get_menu_options(staged_changes, unstaged_changes)
             action = questionary.select(title, choices=choices).unsafe_ask()
 
-            if action == f"Generate commit for staged files ({len(staged_changes)})":
+            if action.startswith("Generate Commit for Staged Changes"):
                 handle_generate_commit(diff, staged_changes)
+                console.clear()
             elif action == "Review Changes":
                 handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
             elif action == "Stage Files":
                 handle_stage_files(unstaged_changes)
+                console.clear()
             elif action == "Unstage Files":
                 handle_unstage_files(staged_changes)
+                console.clear()
             elif action == "Ignore Files":
                 handle_ignore_files()
-            elif action == "History":
+                console.clear()
+            elif action == "View Commit History":
                 display_commit_history(0)
                 console.print("[bold green]Displayed commit history.[/bold green]")
             elif action == "Exit":
