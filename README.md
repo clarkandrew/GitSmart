@@ -15,14 +15,33 @@
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
 ---
+<rewrite_this>
 
 ![C0MIT Overview Image](assets/1.png)
 
-Bring your own LLM and leverage  **Git** version control we all know and love, we can automate:
+## Bring Your Own LLM and Leverage Git
+
+<rewrite_this>
+
+![C0MIT Overview Image](assets/1.png)
+
+## Bring Your Own LLM and Leverage Git
+
+<rewrite_this>
+Enhance the version control tool we all know and love with intelligent automation:
+</rewrite_this>
 - **Track Changes**: Keep a history of modifications.
 - **Revert to Previous Versions**: Roll back to earlier states.
 - **Branch and Merge**: Experiment with new ideas without affecting the main project.
 - **Collaborate**: Work with others seamlessly by merging changes and resolving conflicts.
+
+</rewrite_this>
+- **Track Changes**: Keep a history of modifications.
+- **Revert to Previous Versions**: Roll back to earlier states.
+- **Branch and Merge**: Experiment with new ideas without affecting the main project.
+- **Collaborate**: Work with others seamlessly by merging changes and resolving conflicts.
+
+</rewrite_this>
 
 ---
 
