@@ -26,7 +26,7 @@
 - **Branch and Merge**: Experiment with new ideas without affecting the main project branch.
 - **Collaborate Seamlessly**: Work with others by merging changes and resolving conflicts efficiently.
 
-AI-driven Chain-of-Thought analysis for deep understanding of any change:
+### AI-driven Chain-of-Thought analysis for deep understanding of any change:
 ```shell
 **Step-by-Step Thinking:**
 
