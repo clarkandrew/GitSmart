@@ -599,40 +599,60 @@ def get_repo_name() -> str:
     except subprocess.CalledProcessError:
         return "Unknown Repository"
 
-def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> List[str]:
+def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> (str, List[str]):
     """
-    Get the menu options based on the current state of changes.
+    Determine the appropriate menu title and options based on the current repository state.
 
     Args:
         staged_changes (List[Dict[str, Any]]): List of staged changes.
         unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
 
     Returns:
-        List[str]: List of menu options.
+        Tuple[str, List[str]]: A tuple containing the menu title and the list of menu options.
     """
     num_staged_files = len(staged_changes)
     choices = []
+    title = "Select an Action:"
 
-    if staged_changes:
-        choices.append(f"Generate commit for staged files ({num_staged_files})")
-        choices.append("Review Changes")
-        choices.append("Unstage Files")
-        choices.append("Stage Files")
-        choices.append("Ignore Files")
-        choices.append("History")
-        choices.append("Exit")
+    if staged_changes and unstaged_changes:
+        title = "Repository Status: Staged and Unstaged Changes Detected"
+        choices.extend([
+            f"Commit Staged Files ({num_staged_files})",
+            "Review Changes",
+            "Stage Additional Files",
+            "Unstage Files",
+            "Ignore Files",
+            "View Commit History",
+            "Exit"
+        ])
+    elif staged_changes:
+        title = "Repository Status: Staged Changes Detected"
+        choices.extend([
+            f"Commit Staged Files ({num_staged_files})",
+            "Review Changes",
+            "Unstage Files",
+            "Ignore Files",
+            "View Commit History",
+            "Exit"
+        ])
     elif unstaged_changes:
-        choices.append("Review Changes")
-        choices.append("Stage Files")
-        choices.append("Ignore Files")
-        choices.append("History")
-        choices.append("Exit")
+        title = "Repository Status: Unstaged Changes Detected"
+        choices.extend([
+            "Review Changes",
+            "Stage Files",
+            "Ignore Files",
+            "View Commit History",
+            "Exit"
+        ])
     else:
-        choices.append("Ignore Files")
-        choices.append("History")
-        choices.append("Exit")
+        title = "Repository Status: Up to Date"
+        choices.extend([
+            "Ignore Files",
+            "View Commit History",
+            "Exit"
+        ])
 
-    return choices
+    return title, choices
 
 def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
     """
@@ -736,8 +756,8 @@ def main():
 
             console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
 
-            choices = get_menu_options(staged_changes, unstaged_changes)
-            action = questionary.select("Choose an option:", choices=choices).unsafe_ask()
+            title,choices = get_menu_options(staged_changes, unstaged_changes)
+            action = questionary.select(title, choices=choices).unsafe_ask()
 
             if action == f"Generate commit for staged files ({len(staged_changes)})":
                 handle_generate_commit(diff, staged_changes)
