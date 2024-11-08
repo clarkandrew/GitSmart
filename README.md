@@ -1,5 +1,4 @@
 # C0MIT
-### The AI-Powered Git Commit Assistant
 
 ![C0MIT Overview Image](assets/comit.png)
 
@@ -13,6 +12,7 @@
 
 ---
 
+### The AI-Powered Git Commit Assistant
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
 ![C0MIT Overview Image](assets/a.png)
