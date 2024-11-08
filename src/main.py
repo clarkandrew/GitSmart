@@ -730,24 +730,24 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
         repo_status = "[bold]Status:[/bold] [red]Staged and Unstaged Changes Detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
-            "Review Changes",
             "Stage Files",
             "Unstage Files",
+            "Review Changes",
             *choices
         ]
     elif staged_changes:
         repo_status = "[bold]Status:[/bold] [green]Staged Changes Detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
-            "Review Changes",
             "Unstage Files",
+            "Review Changes",
             *choices
         ]
     elif unstaged_changes:
         repo_status = "[bold]Status:[/bold] [yellow1]Unstaged Changes Detected[/]"
         choices = [
-            "Review Changes",
             "Stage Files",
+            "Review Changes",
             *choices
         ]
 
