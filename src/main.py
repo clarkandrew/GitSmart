@@ -695,10 +695,10 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
     """
     num_staged_files = len(staged_changes)
     choices = ["Ignore Files", "View Commit History", "Exit"]
-    title = "Repository Status: Up to Date"
-
+    repo_status = "[bold]Status:[/bold] [white]Up to Date[/]"
+    title = "Select an action:"
     if staged_changes and unstaged_changes:
-        title = "Repository Status: Staged and Unstaged Changes Detected"
+        repo_status = "[bold]Status:[/bold] [red]Staged and Unstaged Changes Detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
             "Review Changes",
@@ -707,7 +707,7 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             *choices
         ]
     elif staged_changes:
-        title = "Repository Status: Staged Changes Detected"
+        repo_status = "[bold]Status:[/bold] [green]Staged Changes Detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
             "Review Changes",
@@ -715,14 +715,14 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             *choices
         ]
     elif unstaged_changes:
-        title = "Repository Status: Unstaged Changes Detected"
+        repo_status = "[bold]Status:[/bold] [yellow1]Unstaged Changes Detected[/]"
         choices = [
             "Review Changes",
             "Stage Files",
             *choices
         ]
 
-    return title, choices
+    return title,repo_status, choices
 
 def main():
     """
@@ -746,7 +746,8 @@ def main():
 
             console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
 
-            title, choices = get_menu_options(staged_changes, unstaged_changes)
+            title, repo_status,choices = get_menu_options(staged_changes, unstaged_changes)
+            console.print(repo_status)
             action = questionary.select(title, choices=choices,style=configure_questionary_style()).unsafe_ask()
 
             if action.startswith("Generate Commit for Staged Changes"):
