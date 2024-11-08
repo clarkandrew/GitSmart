@@ -262,7 +262,8 @@ def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes
 
         if file_diff:
             # Display the diff in a styled panel
-            display_diff_panel(file, file_diff, staged_changes, panel_width=100)
+            _panel = display_diff_panel(file, file_diff, staged_changes, panel_width=100)
+            console.print(_panel)
         else:
             console.print(f"[bold red]No diff available for {file}.[/bold red]")
 
@@ -358,16 +359,16 @@ def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[
 
     # Create the panel
     panel = Panel(
-        syntax,
+        Align.center(syntax),
         title=title,
-        border_style=border_style,
-        style=PANEL_STYLE,
+        border_style="",
+        style="",
         padding=(1, 2),
         subtitle=footer,
         width=panel_width
     )
 
-    return panel
+    return Align.center(panel)
 
 def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], subtitle: str, panel_width: int = 100):
     """
