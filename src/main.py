@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import re
 import subprocess
 import requests
@@ -15,15 +14,14 @@ from rich.align import Align
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
-from rich.rule import Rule
 from rich.text import Text
 from rich.padding import Padding
 from rich.markdown import Markdown
+
 # Initialize logger and console for logging and output
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 console = Console()
-
 # Initialize the config parser
 config = configparser.ConfigParser()
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config.ini")
@@ -93,6 +91,7 @@ class StyledCLIPrinter:
         self.console.print()
         self.console.rule(title, style=BORDER_STYLE)
         self.console.print()
+printer = StyledCLIPrinter(console)
 
 def create_styled_table(title: Optional[str] = None, clean: bool = False) -> Table:
     """
@@ -246,136 +245,9 @@ def unstage_files(files: List[str]):
         logger.error(f"Failed to unstage files: {e}")
         console.print(f"[bold red]Failed to unstage files: {e}[/bold red]")
 
-class CLIPrinter:
-    """
-    A class to handle printing panels and dividers to the console using Rich.
-    """
-    def __init__(self, console: Console):
-        self.console = console
-
-    def print_panel(self, message: str, title: str, style: str):
-        """
-        Print a panel with a message to the console.
-        """
-        panel = Panel(Text(message, style=f"bold {style}"), title=title, border_style=style)
-        self.console.print(panel)
-
-    def print_divider(self):
-        """
-        Print a divider line to the console.
-        """
-        self.console.print("\n")
-        self.console.rule(style="dark_khaki")
-        self.console.print("\n")
-
 def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
     """
     Display the staged changes in a neat panel.
-    """
-    color = "red" if title == "Unstaged Changes" else "green"
-    table = Table(show_header=False, header_style=f"bold {color}", style=f"italic {color}", show_lines=False, box=None)
-    table.add_column("File", justify="left", style="bold white", no_wrap=True)
-    table.add_column("Additions", justify="right", style="green")
-    table.add_column("Deletions", justify="right", style="red")
-
-    for change in file_changes:
-        table.add_row(change["file"], f"+{str(change['additions'])}", f"-{str(change['deletions'])}")
-
-    return table
-
-    def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], subtitle: str, panel_width: int = 100):
-        file_pattern = re.compile(r"diff --git a/(.+?) b/(.+)")
-        current_file = None
-        current_diff = []
-        panels = []
-
-        for line in diff.splitlines():
-            file_match = file_pattern.match(line)
-            if file_match:
-                if current_file:
-                    panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width))
-                current_file = file_match.group(2)
-                current_diff = [line]
-            else:
-                current_diff.append(line)
-
-        if current_file:
-            panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width))
-        summary_panel = get_diff_summary_panel(staged_file_changes, title="Staged Changes", subtitle=subtitle)
-
-        grouped_panels = Group(*panels)
-        panel = Panel(grouped_panels, title="[bold white]File Diffs[/bold white]", border_style="dark_khaki", style="white on rgb(39,40,34)", padding=(2, 4), expand=True)
-
-        console.print(Align.center(panel, vertical="middle"))
-
-def stage_files(files: List[str]):
-    """
-    Stage the specified files using git add.
-
-    Args:
-        files (List[str]): List of file paths to stage.
-    """
-    try:
-        subprocess.run(["git", "add"] + files, check=True)
-        console.print("[bold green]Files staged successfully.[/bold green]")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to stage files: {e}")
-        console.print(f"[bold red]Failed to stage files: {e}[/bold red]")
-
-def unstage_files(files: List[str]):
-    """
-    Unstage the specified files using git reset.
-
-    Args:
-        files (List[str]): List of file paths to unstage.
-    """
-    try:
-        subprocess.run(["git", "reset"] + files, check=True)
-        console.print("[bold green]Files unstaged successfully.[/bold green]")
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to unstage files: {e}")
-        console.print(f"[bold red]Failed to unstage files: {e}[/bold red]")
-
-class CLIPrinter:
-    """
-    A class for printing styled messages and panels to the console.
-    """
-    def __init__(self, console: Console):
-        self.console = console
-
-    def print_panel(self, message: str, title: str, style: str):
-        """
-        Print a message inside a styled panel.
-
-        Args:
-            message (str): The message to print.
-            title (str): The title of the panel.
-            style (str): The style of the panel.
-        """
-        panel = Panel(Text(message, style=f"bold {style}"), title=title, border_style=style)
-        self.console.print(panel)
-
-    def print_divider(self):
-        """
-        Print a styled divider.
-        """
-        self.console.print("\n")
-        self.console.rule(style="dark_khaki")
-        self.console.print("\n")
-
-def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
-    """
-    Display the staged changes in a neat panel.
-
-    Args:
-        file_changes (List[Dict[str, Any]]): List of file changes.
-        title (str): Title of the panel.
-        subtitle (str): Subtitle of the panel.
-        panel_width (int): Width of the panel.
-        _panel_style (str): Style of the panel.
-
-    Returns:
-        Panel: A styled panel displaying the file changes.
     """
     color = "red" if title == "Unstaged Changes" else "green"
     table = Table(show_header=False, header_style=f"bold {color}", style=f"italic {color}", show_lines=False, box=None)
@@ -391,12 +263,6 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subti
 def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], subtitle: str, panel_width: int = 100):
     """
     Display the diff for each file in a separate panel.
-
-    Args:
-        diff (str): The git diff output.
-        staged_file_changes (List[Dict[str, Any]]): List of staged file changes.
-        subtitle (str): Subtitle of the panel.
-        panel_width (int): Width of the panel.
     """
     file_pattern = re.compile(r"diff --git a/(.+?) b/(.+)")
     current_file = None
@@ -555,7 +421,7 @@ def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[
 
 def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
-    Display the status of unstaged and staged changes and return the diffs and changes.
+    Get the status of unstaged and staged changes and return the diffs and changes.
 
     Returns:
         Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]: The diffs and changes.
@@ -567,7 +433,7 @@ def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
-def load_gitignore():
+def load_gitignore() -> List[str]:
     """
     Load the current .gitignore file and return the list of ignored files.
 
@@ -579,7 +445,7 @@ def load_gitignore():
     with open('.gitignore', 'r') as f:
         return [line.strip() for line in f.readlines() if line.strip()]
 
-def save_gitignore(ignored_files):
+def save_gitignore(ignored_files: List[str]):
     """
     Save the list of ignored files to the .gitignore file.
 
@@ -589,7 +455,7 @@ def save_gitignore(ignored_files):
     with open('.gitignore', 'w') as f:
         f.write('\n'.join(ignored_files) + '\n')
 
-def get_tracked_files():
+def get_tracked_files() -> List[str]:
     """
     Get a list of all tracked files in the repository.
 
@@ -598,9 +464,13 @@ def get_tracked_files():
     """
     result = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
     return result.stdout.splitlines()
-def get_repo_name():
+
+def get_repo_name() -> str:
     """
     Function to get the repository name.
+
+    Returns:
+        str: The repository name.
     """
     try:
         repo_name = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], universal_newlines=True).strip().split('/')[-1]
@@ -608,14 +478,150 @@ def get_repo_name():
     except subprocess.CalledProcessError:
         return "Unknown Repository"
 
+def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> List[str]:
+    """
+    Get the menu options based on the current state of changes.
+
+    Args:
+        staged_changes (List[Dict[str, Any]]): List of staged changes.
+        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
+
+    Returns:
+        List[str]: List of menu options.
+    """
+    num_staged_files = len(staged_changes)
+    choices = []
+
+    if staged_changes:
+        choices.append(f"Generate commit for staged files ({num_staged_files})")
+        choices.append("Review Changes")
+        choices.append("Unstage Files")
+        choices.append("Stage Files")
+        choices.append("Ignore Files")
+        choices.append("History")
+        choices.append("Exit")
+    elif unstaged_changes:
+        choices.append("Review Changes")
+        choices.append("Stage Files")
+        choices.append("Ignore Files")
+        choices.append("History")
+        choices.append("Exit")
+    else:
+        choices.append("Ignore Files")
+        choices.append("History")
+        choices.append("Exit")
+
+    return choices
+
+def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
+    """
+    Handle the generation of a commit message and committing the changes.
+
+    Args:
+        diff (str): The git diff of staged changes.
+        staged_changes (List[Dict[str, Any]]): List of staged changes.
+    """
+    if not diff:
+        console.print("[bold red]No staged changes detected.[/bold red]")
+        return
+
+    display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
+
+    commit_message = generate_commit_message(diff)
+    if commit_message:
+        printer.print_divider()
+        console.print(Panel(commit_message, title=f"Commit Generated by {MODEL if len(MODEL) < 30 else f'{MODEL[0:31]}...'}", border_style="dark_khaki", style="white on rgb(39,40,34)"))
+        printer.print_divider()
+        action = questionary.select("What would you like to do?", choices=["Commit", "Retry commit message generation", "Cancel"]).ask()
+        printer.print_divider()
+        if action == "Commit":
+            try:
+                logger.debug("Committing changes.")
+                subprocess.run(["git", "commit", "-m", commit_message], check=True)
+                console.print("[bold green]Changes committed successfully.[/bold green]")
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to commit changes: {e}")
+                console.print(f"[bold red]Failed to commit changes: {e}[/bold red]")
+        elif action == "Retry commit message generation":
+            logger.info("Retrying commit message generation.")
+            handle_generate_commit(diff, staged_changes)
+        else:
+            logger.info("Commit aborted by user.")
+            console.print("[bold yellow]Commit aborted by user.[/bold yellow]")
+    else:
+        logger.error("Failed to generate a commit message.")
+        console.print("[bold red]Failed to generate a commit message.[/bold red]")
+
+def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]], diff: str, unstaged_diff: str):
+    """
+    Handle the review of changes.
+
+    Args:
+        staged_changes (List[Dict[str, Any]]): List of staged changes.
+        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
+        diff (str): The git diff of staged changes.
+        unstaged_diff (str): The git diff of unstaged changes.
+    """
+    review_choices = []
+    if staged_changes:
+        review_choices.append("Staged")
+    if unstaged_changes:
+        review_choices.append("Unstaged")
+    review_action = questionary.select("Which changes would you like to review?", choices=review_choices, style=configure_questionary_style()).unsafe_ask()
+
+    if review_action == "Staged":
+        display_file_diffs(diff, staged_changes, subtitle="Staged Changes")
+    elif review_action == "Unstaged":
+        display_file_diffs(unstaged_diff, unstaged_changes, subtitle="Unstaged Changes")
+
+def handle_stage_files(unstaged_changes: List[Dict[str, Any]]):
+    """
+    Handle the staging of files.
+
+    Args:
+        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
+    """
+    if not unstaged_changes:
+        console.print("[bold red]No unstaged changes detected.[/bold red]")
+        return
+    files_to_stage = questionary.checkbox("Select files to stage:", choices=[change["file"] for change in unstaged_changes]).unsafe_ask()
+    if files_to_stage:
+        stage_files(files_to_stage)
+        console.print(f"[bold green]Staged files: {', '.join(files_to_stage)}[/bold green]")
+
+def handle_unstage_files(staged_changes: List[Dict[str, Any]]):
+    """
+    Handle the unstaging of files.
+
+    Args:
+        staged_changes (List[Dict[str, Any]]): List of staged changes.
+    """
+    if not staged_changes:
+        console.print("[bold red]No staged changes detected.[/bold red]")
+        return
+    files_to_unstage = questionary.checkbox("Select files to unstage:", choices=[change["file"] for change in staged_changes]).unsafe_ask()
+    if files_to_unstage:
+        unstage_files(files_to_unstage)
+        console.print(f"[bold green]Unstaged files: {', '.join(files_to_unstage)}[/bold green]")
+
+def handle_ignore_files():
+    """
+    Handle the ignoring of files.
+    """
+    ignored_files = load_gitignore()
+    all_files = get_tracked_files()
+    choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
+    selected_files = questionary.checkbox("Select files to ignore:", choices=choices).unsafe_ask()
+    save_gitignore(selected_files)
+    console.print("[bold green]Updated .gitignore file.[/bold green]")
+
 def main():
     """
     Main function to generate and commit a message based on staged changes.
     """
     console.print(Markdown("# c-01"))
-    printer = CLIPrinter(console)
-    questionary_style = configure_questionary_style()
 
+    questionary_style = configure_questionary_style()
     repo_name = get_repo_name()  # Function to get the repository name
 
     display_commit_history(3)
@@ -625,111 +631,27 @@ def main():
             diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
             display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
 
-            num_staged_files = len(staged_changes)
-            choices = []
-
-            if staged_changes:
-                choices.append(f"Generate commit for staged files ({num_staged_files})")
-                choices.append("Review Changes")
-                choices.append("Unstage Files")
-                choices.append("Stage Files")
-                choices.append("Ignore Files")
-                choices.append("History")
-                choices.append("Exit")
-            elif unstaged_changes:
-                choices.append("Review Changes")
-                choices.append("Stage Files")
-                choices.append("Ignore Files")
-                choices.append("History")
-                choices.append("Exit")
-            else:
-                choices.append("Ignore Files")
-                choices.append("History")
-                choices.append("Exit")
-
-            # Remove empty strings from choices
-            # choices = [choice for choice in choices if choice]
-
             total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
             total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
 
             console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
 
+            choices = get_menu_options(staged_changes, unstaged_changes)
             action = questionary.select("Choose an option:", choices=choices).unsafe_ask()
-            if action == f"Generate commit for staged files ({num_staged_files})":
-                if not diff:
-                    console.print("[bold red]No staged changes detected.[/bold red]")
-                    continue
-                display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
 
-                commit_message = generate_commit_message(diff)
-                if commit_message:
-                    printer.print_divider()
-                    console.print(Panel(commit_message, title=f"Commit Generated by {MODEL if len(MODEL) < 30 else f'{MODEL[0:31]}...'}", border_style="dark_khaki", style="white on rgb(39,40,34)"))
-                    printer.print_divider()
-                    action = questionary.select("What would you like to do?", choices=["Commit", "Retry commit message generation", "Cancel"]).ask()
-                    printer.print_divider()
-                    if action == "Commit":
-                        try:
-                            logger.debug("Committing changes.")
-                            subprocess.run(["git", "commit", "-m", commit_message], check=True)
-                            console.print("[bold green]Changes committed successfully.[/bold green]")
-                        except subprocess.CalledProcessError as e:
-                            logger.error(f"Failed to commit changes: {e}")
-                            console.print(f"[bold red]Failed to commit changes: {e}[/bold red]")
-                    elif action == "Retry commit message generation":
-                        logger.info("Retrying commit message generation.")
-                        continue
-                    else:
-                        logger.info("Commit aborted by user.")
-                        console.print("[bold yellow]Commit aborted by user.[/bold yellow]")
-                else:
-                    logger.error("Failed to generate a commit message.")
-                    console.print("[bold red]Failed to generate a commit message.[/bold red]")
-
+            if action == f"Generate commit for staged files ({len(staged_changes)})":
+                handle_generate_commit(diff, staged_changes)
             elif action == "Review Changes":
-                review_choices = []
-                if staged_changes:
-                    review_choices.append("Staged")
-                if unstaged_changes:
-                    review_choices.append("Unstaged")
-                review_action = questionary.select("Which changes would you like to review?", choices=review_choices, style=questionary_style).unsafe_ask()
-
-                if review_action == "Staged":
-                    display_file_diffs(diff, staged_changes, subtitle="Staged Changes")
-                elif review_action == "Unstaged":
-                    display_file_diffs(unstaged_diff, unstaged_changes, subtitle="Unstaged Changes")
-
+                handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
             elif action == "Stage Files":
-                if not unstaged_changes:
-                    console.print("[bold red]No unstaged changes detected.[/bold red]")
-                    continue
-                files_to_stage = questionary.checkbox("Select files to stage:", choices=[change["file"] for change in unstaged_changes]).unsafe_ask()
-                if files_to_stage:
-                    stage_files(files_to_stage)
-                    console.print(f"[bold green]Staged files: {', '.join(files_to_stage)}[/bold green]")
-
+                handle_stage_files(unstaged_changes)
             elif action == "Unstage Files":
-                if not staged_changes:
-                    console.print("[bold red]No staged changes detected.[/bold red]")
-                    continue
-                files_to_unstage = questionary.checkbox("Select files to unstage:", choices=[change["file"] for change in staged_changes]).unsafe_ask()
-                if files_to_unstage:
-                    unstage_files(files_to_unstage)
-                    console.print(f"[bold green]Unstaged files: {', '.join(files_to_unstage)}[/bold green]")
-
+                handle_unstage_files(staged_changes)
             elif action == "Ignore Files":
-                ignored_files = load_gitignore()
-                all_files = get_tracked_files()
-                choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
-                selected_files = questionary.checkbox("Select files to ignore:", choices=choices).unsafe_ask()
-                save_gitignore(selected_files)
-                console.print("[bold green]Updated .gitignore file.[/bold green]")
-
+                handle_ignore_files()
             elif action == "History":
                 display_commit_history(0)
                 console.print("[bold green]Displayed commit history.[/bold green]")
-
             elif action == "Exit":
                 console.print("[bold green]Exiting...[/bold green]")
                 break
