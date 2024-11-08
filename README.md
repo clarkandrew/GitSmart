@@ -1,5 +1,7 @@
 # C0MIT: The AI-Powered Git Commit Assistant
 
+![C0MIT Overview Image](assets/comit.png)
+
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
@@ -24,11 +26,17 @@
 - **Branch and Merge**: Experiment with new ideas without affecting the main project branch.
 - **Collaborate Seamlessly**: Work with others by merging changes and resolving conflicts efficiently.
 
-### Why C0MMIT
+```shell
+**Step-by-Step Thinking:**
 
-- **Enhanced Productivity**:
-- **Improved Collaboration**: Ensure
-- **Better Version Control**:
+1. **Observations**: A new file `main.py` has been created that contains a complete implementation for a CLI tool to manage git commit messages. It integrates several functionalities such as generating commit messages based on staged changes, styling console output with the `rich` library, handling user interactions with `questionary`, and managing file statuses in git. The file includes various functions for displaying diffs, handling file staging/unstaging, and interacting with the git repository.
+2. **Rationale**: ✨ for the introduction of new features, 💄 for UI improvements, and 📦 for the addition of a new package.
+
+<COMMIT_MESSAGE>✨💄📦 (main.py): implement CLI tool for automated git commit message generation
+
+Introduced a new CLI tool that automates the generation of git commit messages based on staged changes. The tool utilizes the `rich` library for styled console output and `questionary` for user interactions. Key functionalities include displaying diffs for staged changes, staging and unstaging files, and generating commit messages through an external service. This implementation enhances user experience and streamlines commit processes within git repositories.
+</COMMIT_MESSAGE>
+```
 
 ## Why You'd Need C0MIT
 
