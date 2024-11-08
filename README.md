@@ -1,16 +1,16 @@
-# c-01: The Ultimate AI-Powered Git Commit Assistant
+# C0MIT: The AI-Powered Git Commit Assistant
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Contributors](https://img.shields.io/github/contributors/yourusername/c-01)
-![Issues](https://img.shields.io/github/issues/yourusername/c-01)
-![PRs](https://img.shields.io/github/issues-pr/yourusername/c-01)
+![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
+![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
+![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
 
 ---
 
-**c-01** is a cutting-edge Command Line Interface (CLI) tool that leverages Artificial Intelligence to automate the generation of high-quality, meaningful git commit messages. By analyzing your staged changes, **c-01** creates concise, standardized commit messages, enhancing your development workflow and ensuring consistent project documentation.
+**C0MIT** is a cutting-edge Command Line Interface (CLI) tool that leverages Artificial Intelligence to automate the generation of high-quality, meaningful git commit messages. By analyzing your staged changes, **C0MIT** creates concise, standardized commit messages, enhancing your development workflow and ensuring consistent project documentation.
 
 ## Core Value Proposition
 
@@ -22,7 +22,7 @@
 
 ## Table of Contents
 
-- [Target Use Cases and User Personas](#target-use-cases-and-user-personas)
+- [Use Cases](#use-cases)
 - [Quick Start Guide](#quick-start-guide)
 - [Version History and Changelog](#version-history-and-changelog)
 - [Release Roadmap](#release-roadmap)
@@ -45,21 +45,12 @@
 - [Glossary](#glossary)
 - [Badges](#badges)
 
-## Target Use Cases and User Personas
-
-### Use Cases
+## Use Cases
 
 - Rapid development environments requiring quick commits.
 - Projects with strict commit message standards.
 - Teams aiming for better collaboration through clear commit histories.
 - Developers who frequently forget to write detailed commit messages.
-
-### User Personas
-
-- **Solo Developers**: Streamline your workflow and maintain a clean commit history.
-- **Development Teams**: Ensure consistency and clarity in commit messages across the team.
-- **Open Source Contributors**: Contribute to projects with standardized commit messages.
-- **Project Managers**: Easily track changes and understand the context of commits.
 
 ## Quick Start Guide
 
@@ -74,8 +65,8 @@
 1. **Clone the Repository**
 
     ```bash
-    git clone https://github.com/yourusername/c-01.git
-    cd c-01
+    git clone https://github.com/yourusername/C0MIT.git
+    cd C0MIT
     ```
 
 2. **Install Dependencies**
@@ -86,7 +77,7 @@
 
 3. **Configure the Application**
 
-    Create a `config.ini` file in the root directory:
+    Rename `example.config.ini` to `config.ini` and update it with your API credentials:
 
     ```ini
     [API]
@@ -95,15 +86,42 @@
     model = your-model-name
     max_tokens = 500
     temperature = 0.7
+    max_tokens = 8192
     ```
 
-### Running c-01
+### Running C0MIT
 
-```bash
-python src/main.py
-```
+To make it easier to run `C0MIT` from any git directory, you can add it to your PATH. Here's how:
 
-Follow the interactive prompts to generate and commit your changes.
+1. **Add C0MIT to PATH**
+
+    First, make the `C0MIT` script executable:
+
+    ```bash
+    chmod +x /path/to/C0MIT/src/main.py
+    ```
+
+    Then, add the directory to your PATH. You can do this by adding the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
+
+    ```bash
+    export PATH=$PATH:/path/to/C0MIT/src
+    ```
+
+    After adding this line, reload your shell configuration:
+
+    ```bash
+    source ~/.bashrc  # or source ~/.zshrc
+    ```
+
+2. **Run C0MIT**
+
+    Now you can run `C0MIT` from any git directory:
+
+    ```bash
+    C0MIT
+    ```
+
+    Follow the interactive prompts to generate and commit your changes.
 
 ---
 
@@ -124,40 +142,11 @@ Follow the interactive prompts to generate and commit your changes.
 
 ## Detailed Installation Procedures
 
-### Windows
-
-1. **Install Python**
-
-    Download and install Python from the [official website](https://www.python.org/downloads/windows/).
-
-2. **Install Git**
-
-    Download and install Git from the [official website](https://git-scm.com/download/win).
-
-3. **Follow the Quick Start Guide**
-
-### macOS
+### Windows, macOS, and Linux
 
 1. **Install Python and Git**
 
-    Use [Homebrew](https://brew.sh/) to install:
-
-    ```bash
-    brew install python git
-    ```
-
-2. **Follow the Quick Start Guide**
-
-### Linux
-
-1. **Install Python and Git**
-
-    For Debian/Ubuntu:
-
-    ```bash
-    sudo apt-get update
-    sudo apt-get install python3 python3-pip git
-    ```
+    Ensure Python and Git are installed on your system. Refer to the official websites for installation instructions if needed.
 
 2. **Follow the Quick Start Guide**
 
@@ -219,7 +208,7 @@ print(commit_message)
 ## Integration Patterns and Best Practices
 
 - **Secure API Credentials**: Do not commit `config.ini` to version control.
-- **Automate with Pre-Commit Hooks**: Integrate **c-01** into your git workflow.
+- **Automate with Pre-Commit Hooks**: Integrate **C0MIT** into your git workflow.
 - **Regular Updates**: Keep dependencies up-to-date for security and performance.
 
 ---
@@ -320,8 +309,8 @@ We welcome contributions!
 1. **Clone Your Fork**
 
     ```bash
-    git clone https://github.com/yourusername/c-01.git
-    cd c-01
+    git clone https://github.com/yourusername/C0MIT.git
+    cd C0MIT
     ```
 
 2. **Install Development Dependencies**
@@ -395,10 +384,6 @@ We are committed to maintaining a welcoming community. Please read our [Code of 
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Contributors](https://img.shields.io/github/contributors/yourusername/c-01)
-![Issues](https://img.shields.io/github/issues/yourusername/c-01)
-![PRs](https://img.shields.io/github/issues-pr/yourusername/c-01)
-
----
-
-*This README was generated to provide comprehensive guidance on using and contributing to c-01. For any additional information, please contact [support@yourdomain.com](mailto:support@yourdomain.com).*
+![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
+![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
+![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
