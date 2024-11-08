@@ -65,7 +65,7 @@ ALLOWED ICONS:
 ---
 
 ### **Example**
-
+#### IMPORTANT NOTE: This is a brief example. The actual comit that you generate for the code should be far more detailed and precise.
 #### Input:
 `git diff --staged` shows a bug fix in `utils.js`, a new feature for authentication in `api.js`, and query refactoring in `models.js`.
 
@@ -88,5 +88,5 @@ IMPORTANT:
 - The first line of the commit should provide a concise summary.
 - Follow with more details on subsequent lines as needed.
 - Use present tense and imperative mood in the summary (e.g., "Fix typo" instead of "Fixed typo").
-NOW TAKE A DEEP BREATH, REREAD THE SYSTEM INSTRUCTIONS, AND THEN THINK STEP-BY-STEP TO REVIEW THE DIFF AND PROVIDE A COMMIT MESSAGE THAT FULLY REFLECTS THE CHANGES BETWEEN ANGLED BRACKETS <COMMIT_MESSAGE>Your detailed, precise, and comprehensive commit message in the instructed format.
+NOW TAKE A DEEP BREATH, REREAD THE SYSTEM INSTRUCTIONS, AND THEN THINK STEP-BY-STEP TO REVIEW THE DIFF AND PROVIDE AN EXAUHSTIVE COMMIT MESSAGE THAT FULLY CAPTURES AND EXPLAINS THE **ALL** CHANGES BETWEEN ANGLED BRACKETS <COMMIT_MESSAGE>Your detailed, precise, and comprehensive commit message in the instructed format.
 """
