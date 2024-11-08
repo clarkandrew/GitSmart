@@ -1,31 +1,32 @@
-# C0MIT
-
-![C0MIT Overview Image](assets/comit.png)
-
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
-![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
-![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
-
----
-
-### The AI-Powered Git Commit Assistant
+> ![C0MIT Overview Image](assets/comit.png)
+>
+> ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+> ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+> ![Version](https://img.shields.io/badge/version-1.0.0-blue)
+> ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+> ![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
+> ![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
+> ![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
+>
+> ---
+>
+# **C0MIT**
+>
+### *The AI-Powered Git Commit Assistant*
+>
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
-
+>
 ![C0MIT Overview Image](assets/a.png)
-
-### Key Features
-
+>
+### **Key Features**
+>
 - **AI-Powered Commit Messages**: Automatically generate meaningful and standardized commit messages based on your code changes.
 - **Track Changes**: Maintain a detailed history of modifications to your codebase.
 - **Revert to Previous Versions**: Easily roll back to earlier states of your project.
 - **Branch and Merge**: Experiment with new ideas without affecting the main project branch.
 - **Collaborate Seamlessly**: Work with others by merging changes and resolving conflicts efficiently.
-
-### AI-driven Chain-of-Thought analysis for deep understanding of any change:
+>
+### **AI-driven Chain-of-Thought analysis for deep understanding of any change:**
 ```shell
 **Step-by-Step Thinking:**
 
@@ -37,23 +38,6 @@
 Introduced a new CLI tool that automates the generation of git commit messages based on staged changes. The tool utilizes the `rich` library for styled console output and `questionary` for user interactions. Key functionalities include displaying diffs for staged changes, staging and unstaging files, and generating commit messages through an external service. This implementation enhances user experience and streamlines commit processes within git repositories.
 </COMMIT_MESSAGE>
 ```
-
-## Why You'd Need C0MIT
-
-#### **Streamlined Workflow**
-- **Automated Commit Messages**: Automatically generate precise commit messages, saving time and reducing manual effort.
-
-#### **Consistent Version History**
-- **Standardized Messages**: Ensure a clean and organized commit history, making it easier for project tracking, management, and debugging.
-
-#### **Seamless Integration**
-- **User-Friendly CLI**: Simplify your Git workflow with an interactive command-line interface designed for efficiency and ease of use.
-
-#### **Enhanced Code Reviews**
-- **Accurate Summaries**: Produce commit messages that precisely reflect changes, enhancing code review processes and collaboration.
-
-#### **Custom AI Integration**
-- **Adaptive AI Insights**: Choose from leading language models like OpenAI, Anthropic, or Llama to get tailored AI assistance. This customization adapts to your coding style and preferences, significantly enhancing how you summarize and interpret code differences.
 
 ---
 
