@@ -1,5 +1,7 @@
 # C0MIT: The AI-Powered Git Commit Assistant
 
+![C0MIT Overview Image](assets/comit.png)
+
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
