@@ -212,16 +212,80 @@ def parse_diff(diff: str) -> List[Dict[str, Any]]:
 
     return file_changes
 
-def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[Dict[str, Any]], panel_width: int = 100) -> Panel:
+def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]], diff: str, unstaged_diff: str):
     """
-    Display a diff panel for a single file.
+    Handle the review of changes by allowing users to select specific files to view diffs.
+
+    Args:
+        staged_changes (List[Dict[str, Any]]): List of staged changes.
+        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
+        diff (str): The git diff of staged changes.
+        unstaged_diff (str): The git diff of unstaged changes.
     """
-    diff_text = "\n".join(diff_lines)
-    syntax = Syntax(diff_text, "diff", theme="monokai", line_numbers=True)
-    additions = next((change["additions"] for change in file_changes if change["file"] == filename), 0)
-    deletions = next((change["deletions"] for change in file_changes if change["file"] == filename), 0)
-    footer = f"Additions: +{additions}, Deletions: -{deletions}"
-    return Panel(syntax, title=f"[bold blue]{filename}[/bold blue]", border_style="dark_khaki", padding=(1, 2), subtitle=footer, width=panel_width)
+    # Create sets for quick lookup
+    staged_files = set(change["file"] for change in staged_changes)
+    unstaged_files = set(change["file"] for change in unstaged_changes)
+    all_files = staged_files.union(unstaged_files)
+
+    if not all_files:
+        console.print("[bold yellow]No changes to review.[/bold yellow]")
+        return
+
+    # Prepare choices with staged files pre-checked and labeled
+    choices = [
+        questionary.Choice(
+            title=f"{file} [Staged]" if file in staged_files else file,
+            value=file,
+            checked=file in staged_files
+        )
+        for file in sorted(all_files)
+    ]
+
+    # Prompt the user to select files to review
+    selected_files = questionary.checkbox(
+        "Select files to review their diffs:",
+        choices=choices,
+        style=configure_questionary_style(),
+        instruction="(Use space to select, enter to confirm)"
+    ).unsafe_ask()
+
+    if not selected_files:
+        console.print("[bold yellow]No files selected for review.[/bold yellow]")
+        return
+
+    for file in selected_files:
+        # Determine if the file is staged
+        is_staged = file in staged_files
+
+        # Get the appropriate diff for the file
+        file_diff = get_file_diff(file, staged=is_staged)
+
+        if file_diff:
+            # Display the diff in a styled panel
+            display_diff_panel(file, file_diff, staged_changes, panel_width=100)
+        else:
+            console.print(f"[bold red]No diff available for {file}.[/bold red]")
+
+def get_file_diff(file: str, staged: bool = True) -> List[str]:
+    """
+    Retrieve the git diff for a specific file, either staged or unstaged.
+
+    Args:
+        file (str): The file path.
+        staged (bool): Whether to retrieve the staged diff. Defaults to True.
+
+    Returns:
+        List[str]: The diff lines for the file.
+    """
+    try:
+        cmd = ["git", "diff", "--staged", "--", file] if staged else ["git", "diff", "--", file]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True, text=True)
+        diff = result.stdout.strip().split('\n')
+        return diff
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to get diff for {file}: {e}")
+        console.print(f"[bold red]Failed to get diff for {file}: {e}[/bold red]")
+        return []
 
 def stage_files(files: List[str]):
     """
@@ -260,9 +324,60 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subti
 
     return table
 
+def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[Dict[str, Any]], panel_width: int = 100) -> Optional[Panel]:
+    """
+    Display a diff panel for a single file.
+
+    Args:
+        filename (str): The name of the file.
+        diff_lines (List[str]): The lines of the diff.
+        file_changes (List[Dict[str, Any]]): List of all file changes.
+        panel_width (int): The width of the panel. Defaults to 100.
+
+    Returns:
+        Optional[Panel]: The created panel or None if no diff lines are provided.
+    """
+    if not diff_lines:
+        diff_text = "No changes."
+    else:
+        diff_text = "\n".join(diff_lines)
+
+    # Determine the styling based on staged or unstaged
+    is_staged = any(change["file"] == filename for change in file_changes)
+    border_style = "dark_khaki" if is_staged else "red"
+    title = f"[bold blue]{filename}[/bold blue] [{'Staged' if is_staged else 'Unstaged'}]"
+
+    # Create syntax-highlighted diff
+    syntax = Syntax(diff_text, "diff", theme="monokai", line_numbers=True)
+
+    # Extract additions and deletions
+    changes = next((change for change in file_changes if change["file"] == filename), {})
+    additions = changes.get("additions", 0)
+    deletions = changes.get("deletions", 0)
+    footer = f"Additions: +{additions}, Deletions: -{deletions}"
+
+    # Create the panel
+    panel = Panel(
+        syntax,
+        title=title,
+        border_style=border_style,
+        style=PANEL_STYLE,
+        padding=(1, 2),
+        subtitle=footer,
+        width=panel_width
+    )
+
+    return panel
+
 def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], subtitle: str, panel_width: int = 100):
     """
     Display the diff for each file in a separate panel.
+
+    Args:
+        diff (str): The git diff of staged changes.
+        staged_file_changes (List[Dict[str, Any]]): List of staged changes.
+        subtitle (str): Subtitle for the panels.
+        panel_width (int): The width of the panels. Defaults to 100.
     """
     file_pattern = re.compile(r"diff --git a/(.+?) b/(.+)")
     current_file = None
@@ -273,21 +388,26 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
         file_match = file_pattern.match(line)
         if file_match:
             if current_file:
-                panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width))
+                panel = display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width)
+                if panel:
+                    panels.append(panel)
             current_file = file_match.group(2)
             current_diff = [line]
         else:
             current_diff.append(line)
 
     if current_file:
-        panels.append(display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width))
-    summary_panel = get_diff_summary_panel(staged_file_changes, title="Staged Changes", subtitle=subtitle)
+        panel = display_diff_panel(current_file, current_diff, staged_file_changes, panel_width=panel_width)
+        if panel:
+            panels.append(panel)
 
-    grouped_panels = Group(*panels)
-    panel = Panel(grouped_panels, title="[bold white]File Diffs[/bold white]", border_style="dark_khaki", style="white on rgb(39,40,34)", padding=(2, 4), expand=True)
-
-    console.print(Align.center(panel, vertical="middle"))
-
+    if panels:
+        summary_panel = get_diff_summary_panel(staged_file_changes, title="Staged Changes", subtitle=subtitle)
+        grouped_panels = Group(*panels)
+        panel = Panel(grouped_panels, title="[bold white]File Diffs[/bold white]", border_style="dark_khaki", style="white on rgb(39,40,34)", padding=(2, 4), expand=True)
+        console.print(panel)
+    else:
+        console.print("[bold yellow]No diffs to display.[/bold yellow]")
 def parse_commit_log(log_output: str):
     """
     Parse the git log output into a list of commit details.
@@ -552,27 +672,6 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         logger.error("Failed to generate a commit message.")
         console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
-def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]], diff: str, unstaged_diff: str):
-    """
-    Handle the review of changes.
-
-    Args:
-        staged_changes (List[Dict[str, Any]]): List of staged changes.
-        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
-        diff (str): The git diff of staged changes.
-        unstaged_diff (str): The git diff of unstaged changes.
-    """
-    review_choices = []
-    if staged_changes:
-        review_choices.append("Staged")
-    if unstaged_changes:
-        review_choices.append("Unstaged")
-    review_action = questionary.select("Which changes would you like to review?", choices=review_choices, style=configure_questionary_style()).unsafe_ask()
-
-    if review_action == "Staged":
-        display_file_diffs(diff, staged_changes, subtitle="Staged Changes")
-    elif review_action == "Unstaged":
-        display_file_diffs(unstaged_diff, unstaged_changes, subtitle="Unstaged Changes")
 
 def handle_stage_files(unstaged_changes: List[Dict[str, Any]]):
     """
