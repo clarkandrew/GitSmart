@@ -14,6 +14,8 @@
 
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
+![C0MIT Overview Image](assets/a.png)
+
 ### Key Features
 
 - **AI-Powered Commit Messages**: Automatically generate meaningful and standardized commit messages based on your code changes.
@@ -24,9 +26,27 @@
 
 ### Why C0MMIT
 
-- **Enhanced Productivity**: Save time by automating the creation of commit messages.
-- **Improved Collaboration**: Ensure consistent and clear commit messages, making it easier for team members to understand changes.
-- **Better Version Control**: Maintain a clean and organized commit history, facilitating easier project management and debugging.
+- **Enhanced Productivity**:
+- **Improved Collaboration**: Ensure
+- **Better Version Control**:
+
+## Why You'd Need C0MIT
+
+#### **Streamlined Workflow**
+- **Automated Commit Messages**: Automatically generate precise commit messages, saving time and reducing manual effort.
+
+#### **Consistent Version History**
+- **Standardized Messages**: Ensure a clean and organized commit history, making it easier for project tracking, management, and debugging.
+
+#### **Seamless Integration**
+- **User-Friendly CLI**: Simplify your Git workflow with an interactive command-line interface designed for efficiency and ease of use.
+
+#### **Enhanced Code Reviews**
+- **Accurate Summaries**: Produce commit messages that precisely reflect changes, enhancing code review processes and collaboration.
+
+#### **Custom AI Integration**
+- **Adaptive AI Insights**: Choose from leading language models like OpenAI, Anthropic, or Llama to get tailored AI assistance. This customization adapts to your coding style and preferences, significantly enhancing how you summarize and interpret code differences.
+
 
 ### Getting Started
 
@@ -95,7 +115,9 @@ To use **C0MIT** from any Git directory, add it to your system's PATH:
 
    Follow the on-screen prompts to generate and commit your changes.
 
----
+
+![C0MIT Overview Image](assets/b.png)
+
 
 ## Version History and Changelog
 
