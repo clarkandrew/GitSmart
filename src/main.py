@@ -747,7 +747,7 @@ def main():
             console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
 
             title, choices = get_menu_options(staged_changes, unstaged_changes)
-            action = questionary.select(title, choices=choices).unsafe_ask()
+            action = questionary.select(title, choices=choices,style=configure_questionary_style()).unsafe_ask()
 
             if action.startswith("Generate Commit for Staged Changes"):
                 handle_generate_commit(diff, staged_changes)
