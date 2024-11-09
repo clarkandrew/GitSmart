@@ -7,7 +7,7 @@
 > ![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
 > ![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
 >
-> ![C0MIT Overview Image](assets/comit.png)
+> ![C0MIT Overview Image](assets/no-bg.png)
 >
 > ---
 >
@@ -27,14 +27,46 @@
 >
 ### **AI-driven Chain-of-Thought analysis for deep understanding of any change:**
 ```shell
+
+
+
+            ╭─────────────────────────────────── assets/no-bg.png [Staged] ────────────────────────────────────╮
+            │                                                                                                  │
+            │                       1 diff --git a/assets/no-bg.png b/assets/no-bg.png                         │
+            │                       2 new file mode 100644                                                     │
+            │                       3 index 0000000..caa7508                                                   │
+            │                       4 Binary files /dev/null and b/assets/no-bg.png differ                     │
+            │                                                                                                  │
+            ╰───────────────────────────────────────────── +0, -0 ─────────────────────────────────────────────╯
+
+
+
+
+
+```markdown
 **Step-by-Step Thinking:**
 
-1. **Observations**: A new file `main.py` has been created that contains a complete implementation for a CLI tool to manage git commit messages. It integrates several functionalities such as generating commit messages based on staged changes, styling console output with the `rich` library, handling user interactions with `questionary`, and managing file statuses in git. The file includes various functions for displaying diffs, handling file staging/unstaging, and interacting with the git repository.
-2. **Rationale**: ✨ for the introduction of new features, 💄 for UI improvements, and 📦 for the addition of a new package.
+1. **Observations**:
+   - The `README.md` file has been modified to update an image link.
+   - Specifically, the `C0MIT Overview Image` source has changed from `assets/comit.png` to `assets/no-bg.png`.
+   - A new file, `no-bg.png`, has been added to the `assets` directory.
+   - The nature of the change suggests a visual update, potentially for aesthetic or branding reasons.
 
-<COMMIT_MESSAGE>✨💄📦 (main.py): implement CLI tool for automated git commit message generation
+2. **Rationale**:
+   - Chosen Icon: 💄 (for UI improvements, as the change affects the visual aspect of the project)
+   - Theme: Update of graphical asset for potential branding or layout adjustments.
 
-Introduced a new CLI tool that automates the generation of git commit messages based on staged changes. The tool utilizes the `rich` library for styled console output and `questionary` for user interactions. Key functionalities include displaying diffs for staged changes, staging and unstaging files, and generating commit messages through an external service. This implementation enhances user experience and streamlines commit processes within git repositories.
+<COMMIT_MESSAGE>
+💄 Update README Image Asset
+
+**WHAT:** Replaced `comit.png` with `no-bg.png` in README.md
+**WHY:** Refresh project's visual identity by updating the C0MIT Overview Image to a new version without background (`no-bg.png`), enhancing overall UI consistency and appeal.
+
+**DETAILS:**
+- **Affected File(s):**
+  - `README.md`: Updated image link to reflect new asset.
+  - `assets/no-bg.png`: Newly added image file, replacing the original `comit.png`.
+- **Impact:** This change modernizes the project's front-facing visuals in the README, ensuring a more engaging and up-to-date first impression for visitors.
 </COMMIT_MESSAGE>
 ```
 
