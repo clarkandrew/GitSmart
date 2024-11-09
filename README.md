@@ -1,47 +1,47 @@
-# **C0MIT**
-> ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-> ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-> ![Version](https://img.shields.io/badge/version-1.0.0-blue)
-> ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-> ![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
-> ![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
-> ![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
->
-> ![C0MIT Overview Image](assets/no-bg.png)
->
-> ---
->
-### **C0MIT:** *The AI-Powered Git Commit Assistant*
->
+# **C0MIT:** *The AI-Powered Git Commit Assistant*
+
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
+![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
+![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
+
+![C0MIT Overview Image](assets/no-bg.png)
+
+---
+
+## **C0MIT:** *The AI-Powered Git Commit Assistant*
+
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
->
+
 ![C0MIT Overview Image](assets/cc.png)
->
-### **Key Features**
->
+
+---
+
+## **Key Features**
+
 - **AI-Powered Commit Messages**: Automatically generate meaningful and standardized commit messages based on your code changes.
 - **Track Changes**: Maintain a detailed history of modifications to your codebase.
 - **Revert to Previous Versions**: Easily roll back to earlier states of your project.
 - **Branch and Merge**: Experiment with new ideas without affecting the main project branch.
 - **Collaborate Seamlessly**: Work with others by merging changes and resolving conflicts efficiently.
->
-### **AI-driven Chain-of-Thought analysis for deep understanding of any change:**
+
+---
+
+## **AI-driven Chain-of-Thought Analysis for Deep Understanding of Any Change**
+
 ```shell
-
-
-
-            ╭─────────────────────────────────── assets/no-bg.png [Staged] ────────────────────────────────────╮
-            │                                                                                                  │
-            │                       1 diff --git a/assets/no-bg.png b/assets/no-bg.png                         │
-            │                       2 new file mode 100644                                                     │
-            │                       3 index 0000000..caa7508                                                   │
-            │                       4 Binary files /dev/null and b/assets/no-bg.png differ                     │
-            │                                                                                                  │
-            ╰───────────────────────────────────────────── +0, -0 ─────────────────────────────────────────────╯
-
-
-
-
+╭─────────────────────────────────── assets/no-bg.png [Staged] ────────────────────────────────────╮
+│                                                                                                  │
+│                       1 diff --git a/assets/no-bg.png b/assets/no-bg.png                         │
+│                       2 new file mode 100644                                                     │
+│                       3 index 0000000..caa7508                                                   │
+│                       4 Binary files /dev/null and b/assets/no-bg.png differ                     │
+│                                                                                                  │
+╰───────────────────────────────────────────── +0, -0 ─────────────────────────────────────────────╯
+```
 
 ```markdown
 **Step-by-Step Thinking:**
@@ -72,78 +72,78 @@
 
 ---
 
-# Getting Started
+## **Getting Started**
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/C0MIT.git
+### 1. Clone the Repository
 
-2. **Install Dependencies**
+```bash
+git clone https://github.com/yourusername/C0MIT.git
+```
 
-   Install the required Python packages:
+### 2. **Install Dependencies**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+Install the required Python packages:
 
-3. **Configure the Application**
+```bash
+pip install -r requirements.txt
+```
 
-   Rename the example configuration file and update it with your API credentials:
+### 3. **Configure the Application**
 
-   ```bash
-   mv example.config.ini config.ini
-   ```
+Rename the example configuration file and update it with your API credentials:
 
-   Edit `config.ini`:
+```bash
+mv example.config.ini config.ini
+```
 
-   ```ini
-   [API]
-   auth_token = YOUR_API_TOKEN
-   api_url = https://api.yourservice.com/v1/chat/completions
-   model = your-model-name
-   max_tokens = 500
-   temperature = 0.7
-   ```
+Edit `config.ini`:
 
-### Running C0MIT
+```ini
+[API]
+auth_token = YOUR_API_TOKEN
+api_url = https://api.yourservice.com/v1/chat/completions
+model = your-model-name
+max_tokens = 500
+temperature = 0.7
+```
+
+### 4. **Run C0MIT**
 
 To use **C0MIT** from any Git directory, add it to your system's PATH:
 
-1. **Make the Script Executable**
+#### a. Make the Script Executable
 
-   ```bash
-   chmod +x /path/to/C0MIT/src/main.py
-   ```
+```bash
+chmod +x /path/to/C0MIT/src/main.py
+```
 
-2. **Add C0MIT to PATH**
+#### b. Add C0MIT to PATH
 
-   Add the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
+Add the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
 
-   ```bash
-   export PATH=$PATH:/path/to/C0MIT/src
-   ```
+```bash
+export PATH=$PATH:/path/to/C0MIT/src
+```
 
-   Reload your shell configuration:
+Reload your shell configuration:
 
-   ```bash
-   source ~/.bashrc  # or source ~/.zshrc
-   ```
+```bash
+source ~/.bashrc  # or source ~/.zshrc
+```
 
-3. **Run C0MIT**
+#### c. Execute C0MIT
 
-   In your Git repository, run:
+In your Git repository, run:
 
-   ```bash
-   C0MIT
-   ```
+```bash
+C0MIT
+```
 
-   Follow the on-screen prompts to generate and commit your changes.
+Follow the on-screen prompts to generate and commit your changes.
 
+---
 
-![C0MIT Overview Image](assets/bb.png)
-
-
-## Version History and Changelog
+## **Version History and Changelog**
 
 ### [1.0.0] - 2023-10-01
 
@@ -158,7 +158,7 @@ To use **C0MIT** from any Git directory, add it to your system's PATH:
 
 ---
 
-## Release Roadmap
+## **Release Roadmap**
 
 ### Upcoming Features
 
@@ -176,7 +176,7 @@ To use **C0MIT** from any Git directory, add it to your system's PATH:
 
 ---
 
-## Technical Implementation
+## **Technical Implementation**
 
 ### Installation Procedures for Windows, macOS, and Linux
 
@@ -254,7 +254,7 @@ print(commit_message)
 
 ---
 
-## Community Engagement
+## **Community Engagement**
 
 ### Contribution Workflow and Guidelines
 
@@ -339,7 +339,17 @@ We are committed to fostering a welcoming community. Please read our [Code of Co
 
 ---
 
-## Glossary
+## **Before and After: Transforming Your Git Commits with C0MIT**
+
+**Before:**
+Your Git commit messages are a tangled mess—full of vague descriptions like “fix stuff” or “update files,” making it hard to track changes and collaborate effectively.
+
+**After:**
+Run **C0MIT** and enjoy the perks of AI-powered commit messages that are clear, standardized, and meaningful. Effortlessly track changes, collaborate seamlessly, and maintain a professional project history without the hassle.
+
+---
+
+## **Glossary**
 
 - **AI (Artificial Intelligence)**: Technology that enables computers to perform tasks that typically require human intelligence.
 - **API (Application Programming Interface)**: A set of rules that allows programs to communicate with each other.
@@ -353,7 +363,7 @@ We are committed to fostering a welcoming community. Please read our [Code of Co
 
 ---
 
-## Badges
+## **Badges**
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
@@ -362,3 +372,7 @@ We are committed to fostering a welcoming community. Please read our [Code of Co
 ![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
 ![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
 ![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
+
+---
+
+**Start transforming your Git workflow today with C0MIT. Enhance your productivity, improve collaboration, and maintain a clean project history effortlessly. [Get Started Now](#getting-started).**
