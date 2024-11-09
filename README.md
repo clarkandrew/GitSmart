@@ -1,5 +1,4 @@
-> ![C0MIT Overview Image](assets/comit.png)
->
+# **C0MIT**
 > ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 > ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 > ![Version](https://img.shields.io/badge/version-1.0.0-blue)
@@ -8,11 +7,11 @@
 > ![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
 > ![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
 >
+> ![C0MIT Overview Image](assets/comit.png)
+>
 > ---
 >
-# **C0MIT**
->
-### *The AI-Powered Git Commit Assistant*
+### **C0MIT:** *The AI-Powered Git Commit Assistant*
 >
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 >
@@ -109,7 +108,7 @@ To use **C0MIT** from any Git directory, add it to your system's PATH:
    Follow the on-screen prompts to generate and commit your changes.
 
 
-   ![C0MIT Overview Image](assets/bb.png){: style="width: 100%;" }
+![C0MIT Overview Image](assets/bb.png)
 
 
 ## Version History and Changelog
