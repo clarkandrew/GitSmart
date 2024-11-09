@@ -2,6 +2,7 @@ import re
 import subprocess
 import requests
 import os
+from count_tokens import count_tokens_in_string
 import json
 import configparser
 import logging
@@ -140,14 +141,18 @@ def generate_commit_message(diff: str) -> str:
     """
     Generate a commit message using an external service.
     """
+
     logger.debug("Entering generate_commit_message function.")
     headers = {"Authorization": AUTH_TOKEN, "Content-Type": "application/json"}
     messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
     body = {"model": MODEL, "messages": messages, "max_tokens": MAX_TOKENS, "n": 1, "stop": None, "temperature": TEMPERATURE, "stream": True}
+    request_tokens = count_tokens_in_string(SYSTEM_MESSAGE + diff + USER_MSG_APPENDIX)
 
     try:
+
         with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
-            task = progress.add_task(MODEL if len(MODEL) < 30 else f"{MODEL[0:31]}...", start=False)
+            prepend_msg = f"Sending {request_tokens} tokens to "
+            task = progress.add_task(prepend_msg + MODEL if len(MODEL) < 30 else f"{prepend_msg}{MODEL[0:31]}...", start=False)
             progress.start_task(task)
 
             response = requests.post(API_URL, headers=headers, json=body, stream=True, timeout=60)
@@ -637,7 +642,7 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         printer.print_divider()
         action = questionary.select(
             "What would you like to do?",
-            choices=["Commit", "Retry commit message generation", "Cancel"]
+            choices=["Commit", "Retry", "Cancel"]
         ).ask()
         printer.print_divider()
         if action == "Commit":
@@ -648,7 +653,7 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
             except subprocess.CalledProcessError as e:
                 logger.error(f"Failed to commit changes: {e}")
                 console.print(f"[bold red]Failed to commit changes: {e}[/bold red]")
-        elif action == "Retry commit message generation":
+        elif action == "Retry":
             logger.info("Retrying commit message generation.")
             handle_generate_commit(diff, staged_changes)
         else:
@@ -733,6 +738,7 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             "Stage Files",
             "Unstage Files",
             "Review Changes",
+            "Select Model",
             *choices
         ]
     elif staged_changes:
@@ -741,6 +747,7 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             f"Generate Commit for Staged Changes ({num_staged_files})",
             "Unstage Files",
             "Review Changes",
+            "Select Model",
             *choices
         ]
     elif unstaged_changes:
@@ -748,11 +755,15 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
         choices = [
             "Stage Files",
             "Review Changes",
+            "Select Model",
             *choices
         ]
 
     return title, repo_status, choices
-
+def select_model():
+    global MODEL
+    MODEL = questionary.text("Select a model:\n").ask()
+    return MODEL
 def main(reload: bool = False):
     """
     Main function to generate and commit a message based on staged changes.
@@ -801,7 +812,11 @@ def main(reload: bool = False):
                     console.clear()
                 elif action == "View Commit History":
                     display_commit_history(0)
-                    console.print("[bold green]Displayed commit history.[/bold green]")
+
+                elif action == "Select Model":
+                    select_model()
+                    console.print(f"Model selected {MODEL}")
+
                 elif action == "Exit":
                     console.print("[bold green]Exiting...[/bold green]")
                     break
