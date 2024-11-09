@@ -109,7 +109,7 @@ To use **C0MIT** from any Git directory, add it to your system's PATH:
    Follow the on-screen prompts to generate and commit your changes.
 
 
-![C0MIT Overview Image](assets/b.png)
+![C0MIT Overview Image](assets/bb.png)
 
 
 ## Version History and Changelog
