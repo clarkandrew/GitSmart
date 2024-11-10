@@ -99,3 +99,4 @@ playwright/
 
 # vscode settings (if using VSCode and don’t want to track its settings)
 .vscode/
+config.ini

@@ -143,7 +143,7 @@ def generate_commit_message(diff: str) -> str:
     """
 
     logger.debug("Entering generate_commit_message function.")
-    headers = {"Authorization": AUTH_TOKEN, "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
     messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
     body = {"model": MODEL, "messages": messages, "max_tokens": MAX_TOKENS, "n": 1, "stop": None, "temperature": TEMPERATURE, "stream": True}
     request_tokens = count_tokens_in_string(SYSTEM_MESSAGE + diff + USER_MSG_APPENDIX)
@@ -549,7 +549,7 @@ def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[
         unstaged_panel = Panel(
             Padding(unstaged_table, (1, 1)),
             title_align="left",
-            title="[bold red]Unstaged Changes",
+            title="[bold red]Unstaged Changes[/]",
             border_style="red",
             width=100,
             expand=False
@@ -561,7 +561,7 @@ def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[
         staged_panel = Panel(
             Padding(staged_table, (1, 1)),
             title_align="left",
-            title="[bold green]Staged Changes",
+            title="[bold cyan]Staged Changes[/]",
             border_style="green",
             width=100,
             expand=False
@@ -729,10 +729,10 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
     """
     num_staged_files = len(staged_changes)
     choices = ["Ignore Files", "View Commit History", "Exit"]
-    repo_status = "[bold]Status:[/bold] [white]Up to Date[/]"
+    repo_status = "[bold white on green]Status:Up to Date[/bold white on green]"
     title = "Select an action:"
     if staged_changes and unstaged_changes:
-        repo_status = "[bold]Status:[/bold] [red]Staged and Unstaged Changes Detected[/]"
+        repo_status = "[white on red]Staged and Unstaged Changes Detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
             "Stage Files",
@@ -742,7 +742,7 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             *choices
         ]
     elif staged_changes:
-        repo_status = "[bold]Status:[/bold] [green]Staged Changes Detected[/]"
+        repo_status = "[black on cyan]Staged Changes Detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
             "Unstage Files",
@@ -751,13 +751,15 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             *choices
         ]
     elif unstaged_changes:
-        repo_status = "[bold]Status:[/bold] [yellow1]Unstaged Changes Detected[/]"
+        repo_status = "[black on yellow1]Unstaged Changes Detected[/]"
         choices = [
             "Stage Files",
             "Review Changes",
             "Select Model",
             *choices
         ]
+
+
 
     return title, repo_status, choices
 def select_model():
