@@ -513,7 +513,7 @@ def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Ta
     Returns:
         Table: A styled table summarizing the file changes.
     """
-    table = Table(show_header=True, show_lines=True, box=None, padding=(0, 2))
+    table = Table(show_header=False, show_lines=True, box=None, padding=(0, 0))
     table.add_column("File", justify="left", style="bold white", no_wrap=True)
     table.add_column("Additions", justify="right", style="green")
     table.add_column("Deletions", justify="right", style="red")
@@ -521,11 +521,13 @@ def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Ta
     total_additions = 0
     total_deletions = 0
     for change in file_changes:
-        file_with_counts = f"{change['file']} (+{change['additions']}/-{change['deletions']})"
+        max_file_name_len = 20
+        if len(change['file']) > max_file_name_len:
+            change['file'] = f"{change['file'][0:max_file_name_len]}..."
         table.add_row(
-            Padding(file_with_counts, (0, 3)),
-            Padding(f"+{str(change['additions'])}", (0, 3)),
-            Padding(f"-{str(change['deletions'])}", (0, 3))
+            Padding(change['file'], (0, 2)),
+            Padding(f"+{str(change['additions'])}", (0, 2)),
+            Padding(f"-{str(change['deletions'])}", (0, 2))
         )
         total_additions += change["additions"]
         total_deletions += change["deletions"]
@@ -547,24 +549,24 @@ def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[
     if unstaged:
         unstaged_table = get_diff_summary_table(unstaged_changes, "red")
         unstaged_panel = Panel(
-            Padding(unstaged_table, (1, 1)),
+            Padding(unstaged_table, (1, 0)),
             title_align="left",
-            title="[bold red]Unstaged Changes[/]",
+            title="[bold white on red]Unstaged Changes[/]",
             border_style="red",
-            width=100,
-            expand=False
+            width=50,
+            expand=True
         )
         console.print(unstaged_panel)
 
     if staged:
         staged_table = get_diff_summary_table(staged_changes, "green")
         staged_panel = Panel(
-            Padding(staged_table, (1, 1)),
+            Padding(staged_table, (1, 0)),
             title_align="left",
-            title="[bold cyan]Staged Changes[/]",
+            title="[bold black on green]Staged Changes[/]",
             border_style="green",
-            width=100,
-            expand=False
+            width=50,
+            expand=True
         )
         console.print(staged_panel)
 
@@ -729,10 +731,14 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
     """
     num_staged_files = len(staged_changes)
     choices = ["Ignore Files", "View Commit History", "Exit"]
-    repo_status = "[bold white on green]Status:Up to Date[/bold white on green]"
     title = "Select an action:"
+
+    # Default status: All changes up to date
+    repo_status = "[green]✔[/] [bold black on green] All changes are up to date[/]"
+
     if staged_changes and unstaged_changes:
-        repo_status = "[white on red]Staged and Unstaged Changes Detected[/]"
+        # Both staged and unstaged changes detected
+        repo_status = "[red]⚠[/] [bold white on red] Staged and unstaged changes detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
             "Stage Files",
@@ -742,7 +748,8 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             *choices
         ]
     elif staged_changes:
-        repo_status = "[black on cyan]Staged Changes Detected[/]"
+        # Only staged changes detected
+        repo_status = "[blue]➤[/] [bold white on blue] Staged changes detected[/]"
         choices = [
             f"Generate Commit for Staged Changes ({num_staged_files})",
             "Unstage Files",
@@ -751,7 +758,8 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             *choices
         ]
     elif unstaged_changes:
-        repo_status = "[black on yellow1]Unstaged Changes Detected[/]"
+        # Only unstaged changes detected
+        repo_status = "[yellow]✗[/] [bold black on yellow] Unstaged changes detected[/]"
         choices = [
             "Stage Files",
             "Review Changes",
@@ -759,13 +767,14 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
             *choices
         ]
 
-
-
     return title, repo_status, choices
+
+
 def select_model():
     global MODEL
     MODEL = questionary.text("Select a model:\n").ask()
     return MODEL
+
 def main(reload: bool = False):
     """
     Main function to generate and commit a message based on staged changes.
@@ -779,7 +788,7 @@ def main(reload: bool = False):
     repo_name = get_repo_name()  # Function to get the repository name
 
     display_commit_history(3)
-    exit_prompted = False
+    exit_prompted = 0
 
     def loop():
         nonlocal exit_prompted
@@ -792,7 +801,7 @@ def main(reload: bool = False):
                 total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
                 total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
 
-                console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
+                console.print(f"[bold white on black]{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/][/]")
 
                 title, repo_status, choices = get_menu_options(staged_changes, unstaged_changes)
                 console.print(repo_status)
@@ -824,18 +833,16 @@ def main(reload: bool = False):
                     break
 
             except KeyboardInterrupt:
-                if exit_prompted:
+                exit_prompted += 1
+                if exit_prompted >= 3:
                     console.print("[bold green]Exiting...[/bold green]")
                     break
                 else:
-                    console.print("[bold black on red]Press Ctrl+C one more time to exit.[/bold black on red]", justify="center")
-                    exit_prompted = True
+                    console.print(f"[bold black on red]Press Ctrl+C {3 - exit_prompted} more time(s) to exit.[/bold black on red]", justify="center")
 
     if reload:
         refresh_interval = 5  # seconds
         console.print(f"[bold yellow]Auto-reload is enabled. Repository status will refresh every {refresh_interval} seconds.[/bold yellow]")
-
-        import threading
 
         def auto_refresh():
             while True:
@@ -854,6 +861,7 @@ def main(reload: bool = False):
         refresh_thread.start()
 
     loop()
+
 
 def get_repo_name() -> str:
     """
