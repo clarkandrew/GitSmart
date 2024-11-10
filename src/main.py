@@ -298,28 +298,41 @@ def get_file_diff(file: str, staged: bool = True) -> List[str]:
         console.print(f"[bold red]Failed to get diff for {file}: {e}[/bold red]")
         return []
 
-def stage_files(files: List[str]):
+def stage_files(files: List[str]) -> str:
     """
     Stage the specified files.
+
+    Args:
+        files (List[str]): List of files to stage.
+
+    Returns:
+        str: Status message indicating the result of the staging.
     """
     try:
         subprocess.run(["git", "add"] + files, check=True)
-        console.print("[bold green]Files staged successfully.[/bold green]")
+        return f"Successfully staged files: {', '.join(files)}"
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to stage files: {e}")
-        console.print(f"[bold red]Failed to stage files: {e}[/bold red]")
+        error_message = f"Failed to stage files: {e}"
+        logger.error(error_message)
+        return error_message
 
-def unstage_files(files: List[str]):
+def unstage_files(files: List[str]) -> str:
     """
     Unstage the specified files.
+
+    Args:
+        files (List[str]): List of files to unstage.
+
+    Returns:
+        str: Status message indicating the result of the unstaging.
     """
     try:
         subprocess.run(["git", "reset"] + files, check=True)
-        console.print("[bold green]Files unstaged successfully.[/bold green]")
+        return f"Successfully unstaged files: {', '.join(files)}"
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to unstage files: {e}")
-        console.print(f"[bold red]Failed to unstage files: {e}[/bold red]")
-
+        error_message = f"Failed to unstage files: {e}"
+        logger.error(error_message)
+        return error_message
 def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
     """
     Display the staged changes in a neat panel.
@@ -665,41 +678,42 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         logger.error("Failed to generate a commit message.")
         console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
-def handle_stage_files(unstaged_changes: List[Dict[str, Any]]):
+def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
     """
-    Handle the staging of files.
+    Handle the staging or unstaging of files.
 
     Args:
-        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
-    """
-    if not unstaged_changes:
-        console.print("[bold red]No unstaged changes detected.[/bold red]")
-        return
-    files_to_stage = questionary.checkbox(
-        "Select files to stage:",
-        choices=[change["file"] for change in unstaged_changes]
-    ).unsafe_ask()
-    if files_to_stage:
-        stage_files(files_to_stage)
-        console.print(f"[bold green]Staged files: {', '.join(files_to_stage)}[/bold green]")
+        changes (List[Dict[str, Any]]): List of changes.
+        action (str): Action to perform, either 'stage' or 'unstage'.
 
-def handle_unstage_files(staged_changes: List[Dict[str, Any]]):
+    Returns:
+        str: Status message indicating the result of the action.
     """
-    Handle the unstaging of files.
+    if not changes:
+        return f"No {action}d changes detected."
 
-    Args:
-        staged_changes (List[Dict[str, Any]]): List of staged changes.
-    """
-    if not staged_changes:
-        console.print("[bold red]No staged changes detected.[/bold red]")
-        return
-    files_to_unstage = questionary.checkbox(
-        "Select files to unstage:",
-        choices=[change["file"] for change in staged_changes]
+    choices = [
+        f"{change['file']} (+{change['additions']}/-{change['deletions']})"
+        for change in changes
+    ]
+    selected_files = questionary.checkbox(
+        f"Select files to {action}:",
+        choices=choices
     ).unsafe_ask()
-    if files_to_unstage:
-        unstage_files(files_to_unstage)
-        console.print(f"[bold green]Unstaged files: {', '.join(files_to_unstage)}[/bold green]")
+
+    if selected_files:
+        files = [file.split()[0] for file in selected_files]
+        if action == 'stage':
+            return stage_files(files)
+        else:
+            return unstage_files(files)
+    return f"No files selected to {action}."
+
+def handle_stage_files(unstaged_changes: List[Dict[str, Any]]) -> str:
+    return handle_files(unstaged_changes, 'stage')
+
+def handle_unstage_files(staged_changes: List[Dict[str, Any]]) -> str:
+    return handle_files(staged_changes, 'unstage')
 
 def handle_ignore_files():
     """
@@ -769,7 +783,10 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
 
     return title, repo_status, choices
 
-
+def get_and_display_status():
+    diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
+    display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
+    return diff, unstaged_diff, staged_changes, unstaged_changes
 def select_model():
     global MODEL
     MODEL = questionary.text("Select a model:\n").ask()
@@ -782,6 +799,7 @@ def main(reload: bool = False):
     Args:
         reload (bool): Whether to enable auto-reloading of repository status.
     """
+    diff, unstaged_diff, staged_changes, unstaged_changes = None, None, None, None
     console.print(Markdown("# c-01"))
 
     questionary_style = configure_questionary_style()
@@ -792,11 +810,11 @@ def main(reload: bool = False):
 
     def loop():
         nonlocal exit_prompted
+        printer.print_divider()
+        diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
         while True:
             try:
-                printer.print_divider()
-                diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
-                display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
+
 
                 total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
                 total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
@@ -810,23 +828,35 @@ def main(reload: bool = False):
                 if action.startswith("Generate Commit for Staged Changes"):
                     handle_generate_commit(diff, staged_changes)
                     console.clear()
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+
                 elif action == "Review Changes":
                     handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+
                 elif action == "Stage Files":
-                    handle_stage_files(unstaged_changes)
+                    status_msg = handle_stage_files(unstaged_changes)
                     console.clear()
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+                    console.print(status_msg)
                 elif action == "Unstage Files":
-                    handle_unstage_files(staged_changes)
+                    status_msg = handle_unstage_files(staged_changes)
                     console.clear()
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+                    console.print(status_msg)
                 elif action == "Ignore Files":
                     handle_ignore_files()
                     console.clear()
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+
                 elif action == "View Commit History":
+                    console.clear()
                     display_commit_history(0)
 
                 elif action == "Select Model":
                     select_model()
                     console.print(f"Model selected {MODEL}")
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "Exit":
                     console.print("[bold green]Exiting...[/bold green]")
