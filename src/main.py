@@ -791,7 +791,9 @@ def select_model():
     global MODEL
     MODEL = questionary.text("Select a model:\n").ask()
     return MODEL
-
+def reset_console():
+    console.clear()
+    print("\n"*25)
 def main(reload: bool = False):
     """
     Main function to generate and commit a message based on staged changes.
@@ -826,48 +828,54 @@ def main(reload: bool = False):
                 action = questionary.select(title, choices=choices, style=configure_questionary_style()).unsafe_ask()
 
                 if action.startswith("Generate Commit for Staged Changes"):
+                    reset_console()
                     handle_generate_commit(diff, staged_changes)
-                    console.clear()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "Review Changes":
+                    reset_console()
                     handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "Stage Files":
                     status_msg = handle_stage_files(unstaged_changes)
-                    console.clear()
+                    reset_console()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
                 elif action == "Unstage Files":
                     status_msg = handle_unstage_files(staged_changes)
-                    console.clear()
+                    reset_console()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
                 elif action == "Ignore Files":
                     handle_ignore_files()
-                    console.clear()
+                    reset_console()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "View Commit History":
                     console.clear()
+                    reset_console()
                     display_commit_history(0)
 
                 elif action == "Select Model":
+                    reset_console()
                     select_model()
-                    console.print(f"Model selected {MODEL}")
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+                    console.print(f"Model selected {MODEL}")
 
                 elif action == "Exit":
-                    console.print("[bold green]Exiting...[/bold green]")
+                    reset_console()
+                    console.print("[bold red]Goodbye...[/bold red]")
                     break
 
             except KeyboardInterrupt:
                 exit_prompted += 1
                 if exit_prompted >= 3:
-                    console.print("[bold green]Exiting...[/bold green]")
+                    reset_console()
+                    console.print("[bold]Goodbye...[/bold]")
                     break
                 else:
+                    reset_console()
                     console.print(f"[bold black on red]Press Ctrl+C {3 - exit_prompted} more time(s) to exit.[/bold black on red]", justify="center")
 
     if reload:
