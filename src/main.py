@@ -297,7 +297,6 @@ def get_file_diff(file: str, staged: bool = True) -> List[str]:
         logger.error(f"Failed to get diff for {file}: {e}")
         console.print(f"[bold red]Failed to get diff for {file}: {e}[/bold red]")
         return []
-
 def run_git_command(command: List[str]) -> str:
     """
     Run a git command and return the result.
@@ -310,9 +309,9 @@ def run_git_command(command: List[str]) -> str:
     """
     try:
         subprocess.run(command, check=True)
-        return f"Successfully executed command: {' '.join(command)}"
+        return f"Success: {' '.join(command)}"
     except subprocess.CalledProcessError as e:
-        error_message = f"Failed to execute command: {' '.join(command)}. Error: {e}"
+        error_message = f"Error: {' '.join(command)}. Error: {e}"
         logger.error(error_message)
         return error_message
 
@@ -669,13 +668,11 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         ).ask()
         printer.print_divider()
         if action == "Commit":
-            try:
-                logger.debug("Committing changes.")
-                subprocess.run(["git", "commit", "-m", commit_message], check=True)
-                console.print("[bold green]Changes committed successfully.[/bold green]")
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Failed to commit changes: {e}")
-                console.print(f"[bold red]Failed to commit changes: {e}[/bold red]")
+            commit_status = run_git_command(["git", "commit", "-m", commit_message])
+            if "Success" in commit_status:
+                return commit_status
+            else:
+                console.print(f"[bold red]{commit_status}[/bold red]")
         elif action == "Retry":
             logger.info("Retrying commit message generation.")
             handle_generate_commit(diff, staged_changes)
@@ -837,9 +834,9 @@ def main(reload: bool = False):
 
                 if action.startswith("Generate Commit for Staged Changes"):
                     reset_console()
-                    handle_generate_commit(diff, staged_changes)
+                    status_msg = handle_generate_commit(diff, staged_changes)
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-
+                    console.print(status_msg)
                 elif action == "Review Changes":
                     reset_console()
                     handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
