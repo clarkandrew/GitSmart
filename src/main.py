@@ -298,6 +298,24 @@ def get_file_diff(file: str, staged: bool = True) -> List[str]:
         console.print(f"[bold red]Failed to get diff for {file}: {e}[/bold red]")
         return []
 
+def run_git_command(command: List[str]) -> str:
+    """
+    Run a git command and return the result.
+
+    Args:
+        command (List[str]): The git command to run.
+
+    Returns:
+        str: Status message indicating the result of the command.
+    """
+    try:
+        subprocess.run(command, check=True)
+        return f"Successfully executed command: {' '.join(command)}"
+    except subprocess.CalledProcessError as e:
+        error_message = f"Failed to execute command: {' '.join(command)}. Error: {e}"
+        logger.error(error_message)
+        return error_message
+
 def stage_files(files: List[str]) -> str:
     """
     Stage the specified files.
@@ -308,13 +326,7 @@ def stage_files(files: List[str]) -> str:
     Returns:
         str: Status message indicating the result of the staging.
     """
-    try:
-        subprocess.run(["git", "add"] + files, check=True)
-        return f"Successfully staged files: {', '.join(files)}"
-    except subprocess.CalledProcessError as e:
-        error_message = f"Failed to stage files: {e}"
-        logger.error(error_message)
-        return error_message
+    return run_git_command(["git", "add"] + files)
 
 def unstage_files(files: List[str]) -> str:
     """
@@ -326,13 +338,9 @@ def unstage_files(files: List[str]) -> str:
     Returns:
         str: Status message indicating the result of the unstaging.
     """
-    try:
-        subprocess.run(["git", "reset"] + files, check=True)
-        return f"Successfully unstaged files: {', '.join(files)}"
-    except subprocess.CalledProcessError as e:
-        error_message = f"Failed to unstage files: {e}"
-        logger.error(error_message)
-        return error_message
+    return run_git_command(["git", "reset"] + files)
+
+
 def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
     """
     Display the staged changes in a neat panel.
@@ -821,7 +829,7 @@ def main(reload: bool = False):
                 total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
                 total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
 
-                console.print(f"[bold white on black]{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/][/]")
+                console.print(f"\n\n[bold white on black]{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/][/]")
 
                 title, repo_status, choices = get_menu_options(staged_changes, unstaged_changes)
                 console.print(repo_status)
