@@ -1,39 +1,50 @@
-# **C0MIT:** *The AI-Powered Git Commit Assistant*
+<h1 align="center"><strong>C0MIT</strong></h1>
+<h2 align="center"><em>The AI-Powered Git Commit Assistant</em></h2>
 
-![C0MIT Overview Image](assets/no-bg.png)
+<div align="center">
+  <img src="assets/no-bg.png" alt="C0MIT Overview Image">
+</div>
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
-![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
-![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
-
+<p align="center">
+  <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
+  <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  <img src="https://img.shields.io/github/contributors/yourusername/C0MIT" alt="Contributors">
+  <img src="https://img.shields.io/github/issues/yourusername/C0MIT" alt="Issues">
+  <img src="https://img.shields.io/github/issues-pr/yourusername/C0MIT" alt="PRs">
+</p>
 
 ---
 
 **C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
-![C0MIT Overview Image](assets/cc.png)
+<div align="center">
+  <img src="assets/cc.png" alt="C0MIT Overview Image">
+</div>
 
 ---
 
 ## Why You'd Need C0MIT
 
 #### **Streamlined Workflow**
+
 - **Automated Commit Messages**: Automatically generate precise commit messages, saving time and reducing manual effort.
 
 #### **Consistent Version History**
+
 - **Standardized Messages**: Ensure a clean and organized commit history, making it easier for project tracking, management, and debugging.
 
 #### **Seamless Integration**
+
 - **User-Friendly CLI**: Simplify your Git workflow with an interactive command-line interface designed for efficiency and ease of use.
 
 #### **Enhanced Code Reviews**
+
 - **Accurate Summaries**: Produce commit messages that precisely reflect changes, enhancing code review processes and collaboration.
 
 #### **Custom AI Integration**
+
 - **Adaptive AI Insights**: Choose from leading language models like OpenAI, Anthropic, or Llama to get tailored AI assistance. This customization adapts to your coding style and preferences, significantly enhancing how you summarize and interpret code differences.
 
 ---
@@ -360,9 +371,11 @@ We are committed to fostering a welcoming community. Please read our [Code of Co
 ## **Before and After: Transforming Your Git Commits with C0MIT**
 
 **Before:**
-Your Git commit messages are a tangled mess—full of vague descriptions like “fix stuff” or “update files,” making it hard to track changes and collaborate effectively.
+
+Your Git commit messages are a tangled mess—full of vague descriptions like "fix stuff" or "update files," making it hard to track changes and collaborate effectively.
 
 **After:**
+
 Run **C0MIT** and enjoy the perks of AI-powered commit messages that are clear, standardized, and meaningful. Effortlessly track changes, collaborate seamlessly, and maintain a professional project history without the hassle.
 
 ---
@@ -383,14 +396,18 @@ Run **C0MIT** and enjoy the perks of AI-powered commit messages that are clear, 
 
 ## **Badges**
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Contributors](https://img.shields.io/github/contributors/yourusername/C0MIT)
-![Issues](https://img.shields.io/github/issues/yourusername/C0MIT)
-![PRs](https://img.shields.io/github/issues-pr/yourusername/C0MIT)
+<p align="center">
+  <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
+  <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  <img src="https://img.shields.io/github/contributors/yourusername/C0MIT" alt="Contributors">
+  <img src="https://img.shields.io/github/issues/yourusername/C0MIT" alt="Issues">
+  <img src="https://img.shields.io/github/issues-pr/yourusername/C0MIT" alt="PRs">
+</p>
 
 ---
 
 **Start transforming your Git workflow today with C0MIT. Enhance your productivity, improve collaboration, and maintain a clean project history effortlessly. [Get Started Now](#getting-started).**
+
+---
