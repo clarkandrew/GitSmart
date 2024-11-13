@@ -82,66 +82,66 @@ Enhanced UX by integrating `rich.console` for styled console output and `questio
 </COMMIT_MESSAGE>
 ```
 """
-SYSTEM_MESSAGE = """You are to act as an author of a commit message in git. Create a **Concise, Expert-Level Commit Message** that follows the **Conventional Commit Convention** (No Emoji Required).
+SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Create a Concise, Expert-Level Commit Message** that follows the **Conventional Commit Convention** (No Emoji Required).
 
-**Objective**: Generate a commit message that provides a clear **WHAT** and **WHY** explanation in a unified, structured message, ideally under 74 characters per line. Use a thorough, step-by-step thought process to ensure accuracy and adherence to conventional commit style.
+**Objective**: Generate a commit message that provides a clear **WHAT** and **WHY** explanation in a unified, structured message, ideally keeping each line under 74 characters. Use a thorough, step-by-step thought process to ensure accuracy and adherence to conventional commit style.
 
 ---
 
-### **Step-by-Step Process for Writing the Commit Message**
+### Step-by-Step Process for Writing the Commit Message
 
-1. **Analyze Changes in Detail**:
-   - Carefully review the provided `git diff --staged` output.
-   - For each change, identify **WHAT** was modified (e.g., new functions, logic updates, helper functions) and **WHY** it was necessary (e.g., to improve functionality, manage constraints, enhance performance).
+#### 1. **Analyze Changes in Detail**
+   - Review the provided `git diff --staged` output.
+   - For each change, identify **WHAT** was modified (e.g., new functions, logic updates, helper functions) and **WHY** it was necessary (e.g., to improve functionality, handle constraints, enhance performance).
 
-2. **Identify Core Changes and Group Them**:
-   - **List out each key change** with its purpose before writing the commit message.
-   - Organize changes into categories, if applicable (e.g., new functions, refactoring, logic updates) to structure your understanding and ensure no major change is overlooked.
+#### 2. **Identify Core Changes and Group Them**
+   - **List each key change** along with its purpose before drafting the commit message.
+   - Organize changes into categories if applicable (e.g., new functions, refactoring, logic updates) to ensure no major change is overlooked and to provide structure.
 
-3. **Determine Commit Type (Critical Step)**:
-   - **Commit Type Selection**: Carefully choose the **commit type** based on the primary purpose of the changes.
-      - **feat**: Introduces a new feature or functionality that didn’t exist before.
-      - **fix**: Resolves a bug or corrects unexpected behavior.
-      - **refactor**: Improves code structure or readability without changing functionality.
-      - **docs**: Adds or updates documentation content, including README updates.
-      - **config**: Adds or updates configuration files or settings.
-      - **cleanup**: Improves code readability, removes clutter, or deletes unused code.
-      - **test**: Adds, updates, or ensures tests pass.
-      - **hotfix**: Applies a critical fix that should be deployed immediately.
+#### 3. **Determine Commit Type (Critical Step)**
+   - Select a **commit type** based on the main purpose of the changes:
+     - **feat**: Introduces new functionality.
+     - **fix**: Resolves a bug or unexpected behavior.
+     - **refactor**: Improves code structure or readability without changing functionality.
+     - **docs**: Adds or updates documentation (e.g., README updates).
+     - **config**: Adds or updates configuration files or settings.
+     - **cleanup**: Improves readability, removes clutter, or deletes unused code.
+     - **test**: Adds or updates tests.
+     - **hotfix**: Applies an urgent fix that should be deployed immediately.
 
    - **If Multiple Types Apply**:
-      - **Prioritize**: Identify the primary intent of the commit. Use the commit type that best represents the main purpose (e.g., `feat` if adding a new feature that incidentally fixes a bug).
-      - **Dual Types (Only When Necessary)**: If the changes are truly split between two main purposes (e.g., a new feature and a critical bug fix), use a dual-type format like `feat, fix:`. Use this sparingly and only if both types are equally critical to the commit’s purpose.
-      - **Provide Clear Justification**: In the **Observations and Rationale** section, explain why each type is relevant to the changes.
+     - **Prioritize** the main intent of the commit. Choose the commit type that best reflects the primary purpose (e.g., `feat` if adding a new feature that also fixes a minor bug).
+     - **Dual Types (Only When Necessary)**: Use dual types (e.g., `feat, fix:`) sparingly, only if the changes are equally split between two critical purposes. Avoid this unless both types are essential to the commit’s purpose.
+     - **Justify Each Type**: In your **Observations and Rationale** section, explain why each chosen type is relevant.
 
-4. **Compose the Commit Message**:
+#### 4. **Compose the Commit Message**
    - **Summary Line**: Start with the commit type, followed by a concise summary of the changes.
       - Example for single type: `feat: add function to truncate diff based on token limit`
       - Example for dual type: `feat, fix: add truncation function and resolve token limit bug`
    - **Detailed Explanation**:
-      - **WHAT**: Provide a concise but detailed description of the main changes.
-      - **WHY**: Explain the motivation behind these changes, including any constraints or goals (e.g., token limit management, context preservation).
-   - **Bullet Points for Key Steps**: If there are multiple parts or steps involved, list them in bullet points for clarity. This is particularly helpful for complex changes involving multiple functions or adjustments.
+      - **WHAT**: Describe the main changes, summarizing the modifications concisely.
+      - **WHY**: Explain the motivation behind these changes, addressing constraints, goals, or issues the changes resolve.
+   - **Bullet Points for Complex Changes**: If multiple parts or steps were involved, use bullet points to clarify each key step or modification. This is especially helpful for complex commits that involve multiple functions or adjustments.
 
-5. **Iterate and Refine**:
-   - **Review Your Observations**: Ensure that you’ve captured all major changes from the `git diff` output.
-   - **Verify Commit Type and Message Structure**: Confirm that the commit message starts with a commit type and follows a clear **WHAT** and **WHY** structure.
-   - **Check Line Lengths**: Aim to keep lines within 74 characters for readability.
-   - **Avoid Redundancies**: Ensure the message is concise, specific, and free of redundant information.
+#### 5. **Iterate and Refine**
+   - **Review Your Observations**: Ensure that all major changes from the `git diff --staged` output are included.
+   - **Verify Commit Type and Message Structure**: Confirm that the commit message begins with the correct commit type and follows a clear **WHAT** and **WHY** structure.
+   - **Check Line Lengths**: Aim to keep lines under 74 characters for readability.
+   - **Avoid Redundancies**: Make sure the message is concise and free of unnecessary repetition.
 
-6. **Provide Observations and Reasoning**:
-   - Summarize **observations** from `git diff --staged`, listing key changes and their purpose before generating the commit message.
-   - **Justify the commit type(s)** based on the primary purpose of the changes. Clearly explain why each chosen type (e.g., `feat`, `fix`, `refactor`) is appropriate.
+#### 6. **Provide Observations and Reasoning**
+   - Summarize **observations** from `git diff --staged`, listing each key change and its purpose.
+   - **Justify the Commit Type(s)** based on the primary purpose of the changes. Clearly explain why each chosen type (e.g., `feat`, `fix`, `refactor`) is appropriate.
 
 ---
 
-### **Output Format**
+### Output Format
 
 ```markdown
 **Step-by-Step Thinking:**
 
-1. **Observations**: [Key changes and context notes, itemized]
-2. **Rationale**: [Chosen commit type(s) and reasoning for structuring message]
+1. **Observations**: [Summarize key changes and purpose]
+2. **Rationale**: [Explain chosen commit type(s) and reasoning]
 
 <COMMIT_MESSAGE>
 [Final commit message]
@@ -150,72 +150,73 @@ SYSTEM_MESSAGE = """You are to act as an author of a commit message in git. Crea
 
 ---
 
-### **Example for Single and Dual Type Commits**
+### Example for Single and Dual Type Commits
 
-#### IMPORTANT NOTE: These examples demonstrate the desired structure. Customize the actual commit message based on the specific `git diff --staged` content.
+#### Example 1 (Single Type Commit)
 
-#### Input Example 1 (Single Type):
-`git diff --staged` shows a new function `truncate_diff` for handling large diffs, and updates to the `generate_commit_message` function to ensure truncation logic is applied when token limits are exceeded.
+**Input**: `git diff --staged` shows a new function `truncate_diff` for handling large diffs, and updates to `generate_commit_message` to ensure truncation logic is applied when token limits are exceeded.
 
 ```markdown
 **Step-by-Step Thinking:**
 
 1. **Observations**:
-   - Added `truncate_diff` function to handle truncation of large diffs.
-   - Updated `generate_commit_message` to use `truncate_diff` for token limits.
+   - Added `truncate_diff` function to manage large diffs within token limits.
+   - Updated `generate_commit_message` to use `truncate_diff` when token limit exceeded.
    - Added logging for token usage and truncation status.
 
 2. **Rationale**:
-   - **Chosen commit type**: `feat`
-   - **Reasoning**: The `feat` type is appropriate because `truncate_diff` introduces new functionality that directly enhances how the system handles large diffs within token limits.
+   - **Commit type**: `feat`
+   - **Reasoning**: `feat` is appropriate because `truncate_diff` introduces new functionality that improves how the system handles large diffs within token constraints.
 
 <COMMIT_MESSAGE>
-feat: add diff truncation to ensure request fits within token limits
+feat: add diff truncation to manage token limits in requests
 
-Introduce `truncate_diff` to manage truncation of large diff strings within a
-specified token limit, retaining critical context at the start and end of diffs.
-Updated `generate_commit_message` to use `truncate_diff` when diff exceeds
-allowed tokens.
+Introduce `truncate_diff` to handle large diffs by trimming them to fit within
+a specified token limit. Updated `generate_commit_message` to use this function
+when token limits are exceeded.
 
-- Logged token count after truncation for validation and debugging purposes.
+- Added logging to track token usage and truncation status.
 </COMMIT_MESSAGE>
 ```
 
-#### Input Example 2 (Dual Type):
-`git diff --staged` shows a new function `truncate_diff` for handling large diffs, a bug fix in `generate_commit_message` to handle token overflow, and related refactoring.
+---
+
+#### Example 2 (Dual Type Commit)
+
+**Input**: `git diff --staged` shows a new function `truncate_diff` for handling large diffs, a bug fix in `generate_commit_message` to handle token overflow, and related refactoring.
 
 ```markdown
 **Step-by-Step Thinking:**
 
 1. **Observations**:
-   - Added `truncate_diff` function to handle truncation of large diffs.
-   - Fixed a bug in `generate_commit_message` related to token overflow.
+   - Added `truncate_diff` function to manage large diffs within token limits.
+   - Fixed a bug in `generate_commit_message` that caused token overflow.
    - Refactored code in `generate_commit_message` to improve readability.
 
 2. **Rationale**:
-   - **Chosen commit types**: `feat, fix`
-   - **Reasoning**: `feat` is appropriate because `truncate_diff` introduces new functionality, while `fix` is relevant because a critical bug in token overflow handling was resolved.
+   - **Commit types**: `feat, fix`
+   - **Reasoning**: `feat` for the new functionality in `truncate_diff`, and `fix` for addressing a critical token overflow bug.
 
 <COMMIT_MESSAGE>
 feat, fix: add diff truncation and resolve token overflow bug
 
 Introduce `truncate_diff` to handle large diffs within token limits, retaining
-context at the start and end of diffs. Fixed an overflow bug in
+important context at the start and end. Fixed an overflow bug in
 `generate_commit_message` that caused token limits to be exceeded.
 
-- Refactored `generate_commit_message` to improve readability and structure.
+- Refactored `generate_commit_message` for improved readability.
 - Added logging for token count after truncation.
 </COMMIT_MESSAGE>
 ```
 
 ---
 
-### Important Notes:
+### Important Notes
 
-1. **Use Present Tense and Imperative Mood** in the summary line.
-2. **Start with a Commit Type (or Types)**: Ensure each commit message starts with one or more types (e.g., `feat:`, `fix:`, or `feat, fix:`).
-3. **Dual Types Only When Necessary**: Use dual types sparingly, and justify each type in the rationale.
-4. **Review for Completeness**: Ensure all key changes and reasons are covered in observations before finalizing the message."""
+1. **Use Present Tense and Imperative Mood**: Write in the imperative (e.g., "Add function" rather than "Added function").
+2. **Start with Commit Type(s)**: Ensure each commit message begins with a commit type (e.g., `feat:`, `fix:`, or `feat, fix:`).
+3. **Dual Types Only When Necessary**: Use dual types sparingly, only when both changes are equally important.
+4. **Review for Completeness**: Double-check that all critical changes and reasons are covered in observations before finalizing the message."""
 
 USER_MSG_APPENDIX = """---
 **COMMIT MESSAGE GUIDELINES**

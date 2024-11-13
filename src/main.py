@@ -34,7 +34,7 @@ MODEL = config["API"]["model"]
 MAX_TOKENS = int(config["API"]["max_tokens"])
 TEMPERATURE = float(config["API"]["temperature"])
 USE_EMOJIS = True if config["PROMPTING"]["use_emojis"] == 'true' or config["PROMPTING"]["use_emojis"] == True else False
-DEBUG = config["APP"]["debug"]
+DEBUG = True if config["APP"]["debug"] == 'true' or config["APP"]["debug"] == True else False
 
 
 # Initialize logger and console for logging and output
