@@ -494,8 +494,6 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
 
-
-
 def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
     """
     Display the staged changes in a neat panel.
@@ -745,26 +743,64 @@ def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
 
 
 
+def get_tracked_files() -> List[str]:
+    """
+    Get a list of all tracked files in the repository.
+
+    Returns:
+        List[str]: List of tracked files.
+    """
+    result = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
+    return result.stdout.splitlines()
+
+
+def get_and_display_status():
+    diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
+    display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
+    return diff, unstaged_diff, staged_changes, unstaged_changes
+
+
+def select_model():
+    global MODEL
+    MODEL = questionary.text("Select a model:\n").ask()
+    return MODEL
+
+
+def reset_console():
+    console.clear()
+    print("\n" * 25)
+
 def handle_ignore_files():
     """
-    Handle the ignoring of files by appending selected files to .gitignore.
+    Handle the ignoring of files by appending selected files or custom patterns to .gitignore.
     Ensures that existing .gitignore entries outside the managed section are preserved.
     """
     ignored_files = load_gitignore()
     all_files = get_tracked_files()
     choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
 
-    # Prompt user to select files to ignore
-    selected_files = questionary.checkbox(
-        "Select files to ignore:",
-        choices=choices
+    # Prompt user to select files to ignore or enter custom patterns
+    action = questionary.select(
+        "Would you like to select files to ignore or enter custom patterns?",
+        choices=["Select files", "Enter custom patterns"]
     ).unsafe_ask()
+
+    if action == "Select files":
+        selected_files = questionary.checkbox(
+            "Select files to ignore:",
+            choices=choices
+        ).unsafe_ask()
+    else:
+        custom_patterns = questionary.text(
+            "Enter custom patterns to ignore (comma-separated):"
+        ).unsafe_ask()
+        selected_files = [pattern.strip() for pattern in custom_patterns.split(",")]
 
     if selected_files:
         update_gitignore(selected_files)
-        console.print("[bold green]Updated .gitignore file with selected files.[/bold green]")
+        console.print("[bold green]Updated .gitignore file with selected files/patterns.[/bold green]")
     else:
-        console.print("[bold yellow]No files selected to ignore.[/bold yellow]")
+        console.print("[bold yellow]No files or patterns selected to ignore.[/bold yellow]")
 
 def save_gitignore_section(ignored_files: List[str]):
     """
@@ -791,7 +827,7 @@ def save_gitignore_section(ignored_files: List[str]):
         content = re.sub(r"# >>> Managed by Git CLI Tool >>>\n.*?# <<< Managed by Git CLI Tool <<<\n", "", content, flags=re.DOTALL)
 
         # Append the new managed section
-        content += "\n" + managed_section
+        content = content.strip() + "\n\n" + managed_section
     else:
         content = managed_section
 
@@ -835,33 +871,122 @@ def load_gitignore() -> List[str]:
 
 def update_gitignore(selected_files: List[str]):
     """
-    Update the .gitignore file by adding newly selected ignored files.
+    Update the .gitignore file by adding newly selected ignored files or patterns.
     Maintains a managed section to prevent duplication.
 
     Args:
-        selected_files (List[str]): List of files to ignore.
+        selected_files (List[str]): List of files or patterns to ignore.
     """
     existing_ignored = set(load_gitignore())
     new_ignored = set(selected_files) - existing_ignored
 
     if not new_ignored:
-        console.print("[bold yellow]No new files to add to .gitignore.[/bold yellow]")
+        console.print("[bold yellow]No new files or patterns to add to .gitignore.[/bold yellow]")
         return
 
     all_ignored = sorted(existing_ignored.union(new_ignored))
     save_gitignore_section(all_ignored)
 
-
-def get_tracked_files() -> List[str]:
+def get_repo_name() -> str:
     """
-    Get a list of all tracked files in the repository.
+    Function to get the repository name.
 
     Returns:
-        List[str]: List of tracked files.
+        str: The repository name.
     """
-    result = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
-    return result.stdout.splitlines()
+    try:
+        repo_path = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], universal_newlines=True).strip()
+        repo_name = os.path.basename(repo_path)
+        return repo_name
+    except subprocess.CalledProcessError:
+        return "Unknown Repository"
 
+def get_git_remotes() -> Dict[str, str]:
+    """
+    Retrieve a dictionary of all configured git remotes and their URLs.
+
+    Returns:
+        Dict[str, str]: Dictionary of remote names and their URLs.
+    """
+    try:
+        result = subprocess.run(["git", "remote", "-v"], stdout=subprocess.PIPE, check=True, text=True)
+        remotes = result.stdout.strip().split('\n')
+        remote_dict = {}
+        for remote in remotes:
+            parts = remote.split()
+            if len(parts) >= 2:
+                name, url = parts[0], parts[1]
+                if name not in remote_dict:
+                    remote_dict[name] = url
+        logger.debug(f"Available remotes: {remote_dict}")
+        return remote_dict
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to retrieve git remotes: {e}")
+        console.print(f"[bold red]Failed to retrieve git remotes: {e}[/bold red]")
+        return {}
+
+
+def push_to_remote(remote: str, url: str) -> str:
+    """
+    Push to a specific remote repository.
+
+    Args:
+        remote: The name of the remote.
+        url: The URL of the remote.
+
+    Returns:
+        A status message indicating success or failure.
+    """
+    try:
+        logger.debug(f"Pushing to remote: {remote}")
+        subprocess.run(["git", "push", remote], check=True)
+        return f"Successfully pushed to {remote} ({url})."
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to push to {remote}: {e}")
+        return f"Failed to push to {remote}: {e}"
+
+def handle_push_repo() -> List[str]:
+    """
+    Handle pushing commits to selected remote repositories.
+
+    Returns:
+        A list of status messages for each push operation.
+    """
+    remotes = get_git_remotes()
+    if not remotes:
+        console.print("[bold red]No remotes found. Please add a remote repository first.[/bold red]")
+        return ["No remotes found."]
+
+    # Let user select one or multiple remotes
+    selected_remotes = questionary.checkbox(
+        "Select remote repositories to push to:",
+        choices=[questionary.Choice(f"{name} ({url})", value=name) for name, url in remotes.items()]
+    ).unsafe_ask()
+
+    if not selected_remotes:
+        console.print("[bold yellow]No remotes selected. Push aborted.[/bold yellow]")
+        return ["No remotes selected."]
+
+    # Prepare confirmation message with remote URLs
+    confirmation_message = "Are you sure you want to push to the following remote(s):\n"
+    for remote in selected_remotes:
+        confirmation_message += f"- {remote} ({remotes[remote]})\n"
+
+    # Confirmation
+    confirm = questionary.confirm(confirmation_message).ask()
+
+    if not confirm:
+        console.print("[bold yellow]Push action canceled by the user.[/bold yellow]")
+        return ["Push action canceled by the user."]
+
+    # Execute git push for each selected remote and collect status messages
+    status_messages = []
+    for remote in selected_remotes:
+        status_message = push_to_remote(remote, remotes[remote])
+        console.print(f"[bold green]{status_message}[/bold green]" if "Successfully" in status_message else f"[bold red]{status_message}[/bold red]")
+        status_messages.append(status_message)
+
+    return status_messages
 
 def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> Tuple[str, str, List[str]]:
     """
@@ -875,7 +1000,8 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
         Tuple[str, str, List[str]]: A tuple containing the menu title, repository status, and the list of menu options.
     """
     num_staged_files = len(staged_changes)
-    choices = ["Ignore Files", "View Commit History", "Exit"]
+    base_choices = ["Ignore Files", "View Commit History", "Push Repo", "Exit"]
+    choices = []
     title = "Select an action:"
 
     # Default status: All changes up to date
@@ -884,35 +1010,20 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
     if staged_changes and unstaged_changes:
         # Both staged and unstaged changes detected
         repo_status = "[red]⚠[/] [bold white on red] Staged and unstaged changes detected[/]"
-        choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Stage Files", "Unstage Files", "Review Changes", "Select Model", *choices]
+        choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Stage Files", "Unstage Files", "Review Changes", "Select Model"]
     elif staged_changes:
         # Only staged changes detected
         repo_status = "[blue]➤[/] [bold white on blue] Staged changes detected[/]"
-        choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Unstage Files", "Review Changes", "Select Model", *choices]
+        choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Unstage Files", "Review Changes", "Select Model"]
     elif unstaged_changes:
         # Only unstaged changes detected
         repo_status = "[yellow]✗[/] [bold black on yellow] Unstaged changes detected[/]"
-        choices = ["Stage Files", "Review Changes", "Select Model", *choices]
+        choices = ["Stage Files", "Review Changes", "Select Model"]
+
+    # Append the base choices to the specific choices
+    choices.extend(base_choices)
 
     return title, repo_status, choices
-
-
-def get_and_display_status():
-    diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
-    display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
-    return diff, unstaged_diff, staged_changes, unstaged_changes
-
-
-def select_model():
-    global MODEL
-    MODEL = questionary.text("Select a model:\n").ask()
-    return MODEL
-
-
-def reset_console():
-    console.clear()
-    print("\n" * 25)
-
 
 def main(reload: bool = False):
     """
@@ -922,7 +1033,7 @@ def main(reload: bool = False):
         reload (bool): Whether to enable auto-reloading of repository status.
     """
     diff, unstaged_diff, staged_changes, unstaged_changes = None, None, None, None
-    console.print(Markdown("# c-01"))
+    console.print(Markdown("# Git CLI Tool"))
 
     questionary_style = configure_questionary_style()
     repo_name = get_repo_name()  # Function to get the repository name
@@ -940,11 +1051,14 @@ def main(reload: bool = False):
                 total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
                 total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
 
-                console.print(f"\n\n[bold white on black]{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/][/]")
-
+                console.print(f"\n\n[bold white on black]{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
                 title, repo_status, choices = get_menu_options(staged_changes, unstaged_changes)
                 console.print(repo_status)
-                action = questionary.select(title, choices=choices, style=configure_questionary_style()).unsafe_ask()
+                action = questionary.select(
+                    title,
+                    choices=choices,
+                    style=configure_questionary_style()
+                ).unsafe_ask()
 
                 if action.startswith("Generate Commit for Staged Changes"):
                     reset_console()
@@ -961,6 +1075,7 @@ def main(reload: bool = False):
                     reset_console()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
+
                 elif action == "Unstage Files":
                     status_msg = handle_unstage_files(staged_changes)
                     reset_console()
@@ -980,8 +1095,13 @@ def main(reload: bool = False):
                     reset_console()
                     select_model()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-                    console.print(f"Model selected {MODEL}")
+                    console.print(f"Model selected: {MODEL}")
 
+                elif action == "Push Repo":
+                    reset_console()
+                    status_msg = handle_push_repo()
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+                    console.print(status_msg)
                 elif action == "Exit":
                     reset_console()
                     console.print("[bold red]Goodbye...[/bold red]")
@@ -1004,10 +1124,10 @@ def main(reload: bool = False):
         def auto_refresh():
             while True:
                 console.print(f"[bold yellow]...[/bold yellow]")
-
                 time.sleep(refresh_interval)
                 printer.print_divider("Auto Refresh")
                 diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
+
                 display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
                 total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
                 total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
@@ -1018,21 +1138,6 @@ def main(reload: bool = False):
         refresh_thread.start()
 
     loop()
-
-
-def get_repo_name() -> str:
-    """
-    Function to get the repository name.
-
-    Returns:
-        str: The repository name.
-    """
-    try:
-        repo_path = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], universal_newlines=True).strip()
-        repo_name = os.path.basename(repo_path)
-        return repo_name
-    except subprocess.CalledProcessError:
-        return "Unknown Repository"
 
 
 if __name__ == "__main__":
