@@ -10,7 +10,7 @@ import questionary
 import time
 import sys
 from typing import List, Dict, Any, Tuple, Optional
-from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX
+from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX,SYSTEM_MESSAGE_EMOJI
 from rich.console import Console, Group
 from rich.syntax import Syntax
 from rich.align import Align
@@ -21,10 +21,6 @@ from rich.text import Text
 from rich.padding import Padding
 from rich.markdown import Markdown
 
-# Initialize logger and console for logging and output
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
-console = Console()
 
 # Initialize the config parser
 config = configparser.ConfigParser()
@@ -37,6 +33,14 @@ API_URL = config["API"]["api_url"]
 MODEL = config["API"]["model"]
 MAX_TOKENS = int(config["API"]["max_tokens"])
 TEMPERATURE = float(config["API"]["temperature"])
+USE_EMOJIS = True if config["PROMPTING"]["use_emojis"] == 'true' or config["PROMPTING"]["use_emojis"] == True else False
+DEBUG = config["APP"]["debug"]
+
+
+# Initialize logger and console for logging and output
+logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+console = Console()
 
 # Theme configuration
 THEME = {
@@ -202,19 +206,22 @@ def generate_commit_message(diff: str) -> str:
     """
     Generate a commit message using an external service.
     """
+    logger.debug(USE_EMOJIS)
+    INSTRUCT_PROMPT = SYSTEM_MESSAGE_EMOJI if USE_EMOJIS == True else SYSTEM_MESSAGE
 
+    logger.debug(INSTRUCT_PROMPT)
     logger.debug("Entering generate_commit_message function.")
     headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
-    messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
+    messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
     body = {"model": MODEL, "messages": messages, "max_tokens": MAX_TOKENS, "n": 1, "stop": None, "temperature": TEMPERATURE, "stream": True}
-    request_tokens = count_tokens_in_string(SYSTEM_MESSAGE + diff + USER_MSG_APPENDIX)
+    request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + diff + USER_MSG_APPENDIX)
     if request_tokens > MAX_TOKENS:
         logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\n\ttruncating...")
-        truncated_diff = truncate_diff(diff, SYSTEM_MESSAGE, USER_MSG_APPENDIX, MAX_TOKENS)
-        messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}]
+        truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, MAX_TOKENS)
+        messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}]
         body["messages"] = messages
         # Recalculate request tokens if necessary
-        request_tokens = count_tokens_in_string(SYSTEM_MESSAGE + truncated_diff + USER_MSG_APPENDIX)
+        request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_diff + USER_MSG_APPENDIX)
         logger.info(f"After truncation, request tokens are {request_tokens}/{MAX_TOKENS}.")
 
     try:
