@@ -137,6 +137,67 @@ def get_git_diff(staged: bool = True) -> str:
         logger.error(f"Failed to get {'staged' if staged else 'unstaged'} diff: {e}")
         return ""
 
+def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_tokens: int) -> str:
+    """
+    Truncate the diff to ensure the total token count does not exceed max_tokens.
+
+    The truncation is performed smartly by removing the least critical parts of the diff
+    to retain as much context as possible.
+
+    Parameters:
+        diff (str): The original diff string to be truncated.
+        system_message (str): The system message content.
+        user_msg_appendix (str): The user message appendix content.
+        max_tokens (int): The maximum allowed number of tokens.
+
+    Returns:
+        str: The truncated diff that fits within the token limit.
+    """
+    from math import floor
+
+    # Helper function to count tokens in a given string
+    def count_tokens(text: str) -> int:
+        # Placeholder for actual token counting logic
+        # Replace this with the appropriate tokenizer, e.g., OpenAI's tokenizer
+        return len(text.split())
+
+    total_allowed_tokens = max_tokens - count_tokens(system_message) - count_tokens(user_msg_appendix)
+    current_tokens = count_tokens(diff)
+
+    if current_tokens <= total_allowed_tokens:
+        return diff
+
+    logger.info(f"Truncating diff from {current_tokens} to {total_allowed_tokens} tokens.")
+
+    # Split the diff into lines for granular truncation
+    diff_lines = diff.splitlines()
+
+    # Calculate average tokens per line
+    avg_tokens_per_line = current_tokens / max(len(diff_lines), 1)
+
+    # Estimate the number of lines to keep
+    lines_to_keep = floor(total_allowed_tokens / avg_tokens_per_line)
+
+    # Ensure at least one line is kept
+    lines_to_keep = max(1, lines_to_keep)
+
+    # Truncate the diff while keeping the start and end intact to preserve context
+    if lines_to_keep < len(diff_lines):
+        # Keep the first and last few lines
+        head = diff_lines[:max(floor(lines_to_keep / 2), 1)]
+        tail = diff_lines[-max(ceil(lines_to_keep / 2), 1):]
+        truncated_diff = "\n".join(head + ["..."] + tail)
+        logger.debug("Diff truncated to preserve context at both ends.")
+    else:
+        # If lines_to_keep >= len(diff_lines), no truncation needed
+        truncated_diff = diff
+
+    # Verify the token count after truncation
+    final_tokens = count_tokens(system_message + truncated_diff + user_msg_appendix)
+    if final_tokens > max_tokens:
+        logger.warning(f"Truncated diff still exceeds max tokens ({final_tokens}/{max_tokens}). Further truncation may be required.")
+
+    return truncated_diff
 def generate_commit_message(diff: str) -> str:
     """
     Generate a commit message using an external service.
@@ -147,6 +208,14 @@ def generate_commit_message(diff: str) -> str:
     messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
     body = {"model": MODEL, "messages": messages, "max_tokens": MAX_TOKENS, "n": 1, "stop": None, "temperature": TEMPERATURE, "stream": True}
     request_tokens = count_tokens_in_string(SYSTEM_MESSAGE + diff + USER_MSG_APPENDIX)
+    if request_tokens > MAX_TOKENS:
+        logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\n\ttruncating...")
+        truncated_diff = truncate_diff(diff, SYSTEM_MESSAGE, USER_MSG_APPENDIX, MAX_TOKENS)
+        messages = [{"role": "system", "content": SYSTEM_MESSAGE}, {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}]
+        body["messages"] = messages
+        # Recalculate request tokens if necessary
+        request_tokens = count_tokens_in_string(SYSTEM_MESSAGE + truncated_diff + USER_MSG_APPENDIX)
+        logger.info(f"After truncation, request tokens are {request_tokens}/{MAX_TOKENS}.")
 
     try:
 
