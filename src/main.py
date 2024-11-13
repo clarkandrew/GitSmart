@@ -494,16 +494,6 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
 
-def handle_ignore_files():
-    """
-    Handle the ignoring of files.
-    """
-    ignored_files = load_gitignore()
-    all_files = get_tracked_files()
-    choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
-    selected_files = questionary.checkbox("Select files to ignore:", choices=choices).unsafe_ask()
-    save_gitignore(selected_files)
-    console.print("[bold green]Updated .gitignore file.[/bold green]")
 
 
 def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
@@ -754,28 +744,112 @@ def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
 
-def load_gitignore() -> List[str]:
-    """
-    Load the current .gitignore file and return the list of ignored files.
 
-    Returns:
-        List[str]: List of ignored files.
+def handle_ignore_files():
     """
-    if not os.path.exists(".gitignore"):
-        return []
-    with open(".gitignore", "r") as f:
-        return [line.strip() for line in f.readlines() if line.strip()]
-
-
-def save_gitignore(ignored_files: List[str]):
+    Handle the ignoring of files by appending selected files to .gitignore.
+    Ensures that existing .gitignore entries outside the managed section are preserved.
     """
-    Save the list of ignored files to the .gitignore file.
+    ignored_files = load_gitignore()
+    all_files = get_tracked_files()
+    choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
+
+    # Prompt user to select files to ignore
+    selected_files = questionary.checkbox(
+        "Select files to ignore:",
+        choices=choices
+    ).unsafe_ask()
+
+    if selected_files:
+        update_gitignore(selected_files)
+        console.print("[bold green]Updated .gitignore file with selected files.[/bold green]")
+    else:
+        console.print("[bold yellow]No files selected to ignore.[/bold yellow]")
+
+def save_gitignore_section(ignored_files: List[str]):
+    """
+    Save the list of ignored files to a specific section in the .gitignore file.
+    This prevents overwriting the entire file and keeps managed entries separate.
 
     Args:
         ignored_files (List[str]): List of files to ignore.
     """
-    with open(".gitignore", "w") as f:
-        f.write("\n".join(ignored_files) + "\n")
+    gitignore_path = ".gitignore"
+    start_marker = "# >>> Managed by Git CLI Tool >>>\n"
+    end_marker = "# <<< Managed by Git CLI Tool <<<\n"
+
+    managed_section = start_marker
+    for file in ignored_files:
+        managed_section += f"{file}\n"
+    managed_section += end_marker
+
+    if os.path.exists(gitignore_path):
+        with open(gitignore_path, "r") as f:
+            content = f.read()
+
+        # Remove existing managed section
+        content = re.sub(r"# >>> Managed by Git CLI Tool >>>\n.*?# <<< Managed by Git CLI Tool <<<\n", "", content, flags=re.DOTALL)
+
+        # Append the new managed section
+        content += "\n" + managed_section
+    else:
+        content = managed_section
+
+    with open(gitignore_path, "w") as f:
+        f.write(content)
+
+def load_gitignore() -> List[str]:
+    """
+    Load the current .gitignore file and return the list of ignored files
+    managed by this tool.
+
+    Returns:
+        List[str]: List of ignored files.
+    """
+    gitignore_path = ".gitignore"
+    start_marker = "# >>> Managed by Git CLI Tool >>>"
+    end_marker = "# <<< Managed by Git CLI Tool <<<"
+
+    if not os.path.exists(gitignore_path):
+        return []
+
+    with open(gitignore_path, "r") as f:
+        lines = f.readlines()
+
+    ignored_files = []
+    in_managed_section = False
+
+    for line in lines:
+        if line.strip() == start_marker:
+            in_managed_section = True
+            continue
+        if line.strip() == end_marker:
+            in_managed_section = False
+            continue
+        if in_managed_section:
+            stripped_line = line.strip()
+            if stripped_line and not stripped_line.startswith("#"):
+                ignored_files.append(stripped_line)
+
+    return ignored_files
+
+def update_gitignore(selected_files: List[str]):
+    """
+    Update the .gitignore file by adding newly selected ignored files.
+    Maintains a managed section to prevent duplication.
+
+    Args:
+        selected_files (List[str]): List of files to ignore.
+    """
+    existing_ignored = set(load_gitignore())
+    new_ignored = set(selected_files) - existing_ignored
+
+    if not new_ignored:
+        console.print("[bold yellow]No new files to add to .gitignore.[/bold yellow]")
+        return
+
+    all_ignored = sorted(existing_ignored.union(new_ignored))
+    save_gitignore_section(all_ignored)
 
 
 def get_tracked_files() -> List[str]:
