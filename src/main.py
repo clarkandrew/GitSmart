@@ -201,7 +201,6 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
 
     return truncated_diff
 
-
 def generate_commit_message(diff: str) -> str:
     """
     Generate a commit message using an external service.
@@ -209,7 +208,6 @@ def generate_commit_message(diff: str) -> str:
     logger.debug(USE_EMOJIS)
     INSTRUCT_PROMPT = SYSTEM_MESSAGE_EMOJI if USE_EMOJIS == True else SYSTEM_MESSAGE
 
-    logger.debug(INSTRUCT_PROMPT)
     logger.debug("Entering generate_commit_message function.")
     headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
     messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
@@ -224,8 +222,22 @@ def generate_commit_message(diff: str) -> str:
         request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_diff + USER_MSG_APPENDIX)
         logger.info(f"After truncation, request tokens are {request_tokens}/{MAX_TOKENS}.")
 
-    try:
 
+    # Additional checks before proceeding
+    if request_tokens > MAX_TOKENS:
+        warning_message = f"The generated commit message exceeds the maximum token limit of {MAX_TOKENS} tokens. Do you want to proceed?"
+        if not questionary.confirm(warning_message).ask():
+            console.print("[bold red]Commit generation aborted by user.[/bold red]")
+            return ""
+
+    deletions = sum(change["deletions"] for change in parse_diff(diff))
+    logger.debug(f"deletions,{str(deletions)}")
+    if deletions > 50:
+        warning_message = f"The commit message indicates a large number of deletions ({deletions} lines). Do you want to proceed?"
+        if not questionary.confirm(warning_message).ask():
+            console.print("[bold red]Commit generation aborted by user.[/bold red]")
+            return ""
+    try:
         with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
             prepend_msg = f"Sending {request_tokens} tokens to "
             task = progress.add_task(f"{prepend_msg} {MODEL} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})...", start=False)
@@ -260,12 +272,15 @@ def generate_commit_message(diff: str) -> str:
             if not commit_message_text:
                 raise ValueError("Could not extract tag")
 
+
+
             console.log("Commit message generated successfully.")
             return commit_message_text
     except Exception as e:
         logger.error(f"Failed to generate commit message: {e}")
         console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
         return ""
+
 
 
 def parse_diff(diff: str) -> List[Dict[str, Any]]:
