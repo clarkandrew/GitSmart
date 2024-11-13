@@ -228,7 +228,7 @@ def generate_commit_message(diff: str) -> str:
 
         with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
             prepend_msg = f"Sending {request_tokens} tokens to "
-            task = progress.add_task(prepend_msg + MODEL if len(MODEL) < 30 else f"{prepend_msg}{MODEL[0:31]}...", start=False)
+            task = progress.add_task(f"{prepend_msg} {MODEL} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})...", start=False)
             progress.start_task(task)
 
             response = requests.post(API_URL, headers=headers, json=body, stream=True, timeout=60)
