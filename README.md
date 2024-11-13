@@ -172,6 +172,12 @@ Follow the on-screen prompts to generate and commit your changes.
 
 ---
 
+<div align="center">
+  <img src="assets/bb.png" alt="C0MIT Overview Image">
+</div>
+
+---
+
 ## **Version History and Changelog**
 
 ### [1.0.0] - 2023-10-01
