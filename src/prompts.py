@@ -82,6 +82,8 @@ Enhanced UX by integrating `rich.console` for styled console output and `questio
 </COMMIT_MESSAGE>
 ```
 """
+
+
 SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Create a Concise, Expert-Level Commit Message** that follows the **Conventional Commit Convention** (No Emoji Required).
 
 **Objective**: Generate a commit message that provides a clear **WHAT** and **WHY** explanation in a unified, structured message, ideally keeping each line under 74 characters. Use a thorough, step-by-step thought process to ensure accuracy and adherence to conventional commit style.
@@ -98,7 +100,7 @@ SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Cr
    - **List each key change** along with its purpose before drafting the commit message.
    - Organize changes into categories if applicable (e.g., new functions, refactoring, logic updates) to ensure no major change is overlooked and to provide structure.
 
-#### 3. **Determine Commit Type (Critical Step)**
+#### 3. **Determine Commit Type and Scope (File Name)**
    - Select a **commit type** based on the main purpose of the changes:
      - **feat**: Introduces new functionality.
      - **fix**: Resolves a bug or unexpected behavior.
@@ -109,15 +111,18 @@ SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Cr
      - **test**: Adds or updates tests.
      - **hotfix**: Applies an urgent fix that should be deployed immediately.
 
+   - **Scope (File or Module)**: After the commit type, include the file name or module name in parentheses to indicate the scope of the change.
+     - For example, `feat(main.py):` or `fix(api/auth.py):`.
+
    - **If Multiple Types Apply**:
      - **Prioritize** the main intent of the commit. Choose the commit type that best reflects the primary purpose (e.g., `feat` if adding a new feature that also fixes a minor bug).
      - **Dual Types (Only When Necessary)**: Use dual types (e.g., `feat, fix:`) sparingly, only if the changes are equally split between two critical purposes. Avoid this unless both types are essential to the commit’s purpose.
      - **Justify Each Type**: In your **Observations and Rationale** section, explain why each chosen type is relevant.
 
 #### 4. **Compose the Commit Message**
-   - **Summary Line**: Start with the commit type, followed by a concise summary of the changes.
-      - Example for single type: `feat: add function to truncate diff based on token limit`
-      - Example for dual type: `feat, fix: add truncation function and resolve token limit bug`
+   - **Summary Line**: Start with the commit type and file name(s) in parentheses, followed by a concise summary of the changes.
+      - Example for single type: `feat(main.py): add function to truncate diff based on token limit`
+      - Example for dual type: `feat(api.py), fix(utils.py): add auth feature and fix bug`
    - **Detailed Explanation**:
       - **WHAT**: Describe the main changes, summarizing the modifications concisely.
       - **WHY**: Explain the motivation behind these changes, addressing constraints, goals, or issues the changes resolve.
@@ -131,7 +136,7 @@ SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Cr
 
 #### 6. **Provide Observations and Reasoning**
    - Summarize **observations** from `git diff --staged`, listing each key change and its purpose.
-   - **Justify the Commit Type(s)** based on the primary purpose of the changes. Clearly explain why each chosen type (e.g., `feat`, `fix`, `refactor`) is appropriate.
+   - **Justify the Commit Type(s)** based on the primary purpose of the changes. Clearly explain why each chosen type (e.g., `feat`, `fix`, `refactor`) is appropriate, and specify the scope (file name or module) for each type.
 
 ---
 
@@ -144,32 +149,32 @@ SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Cr
 2. **Rationale**: [Explain chosen commit type(s) and reasoning]
 
 <COMMIT_MESSAGE>
-[Final commit message]
+[Final commit message with file scope]
 </COMMIT_MESSAGE>
 ```
 
 ---
 
-### Example for Single and Dual Type Commits
+### Example for Single and Dual Type Commits with Scope
 
 #### Example 1 (Single Type Commit)
 
-**Input**: `git diff --staged` shows a new function `truncate_diff` for handling large diffs, and updates to `generate_commit_message` to ensure truncation logic is applied when token limits are exceeded.
+**Input**: `git diff --staged` shows a new function `truncate_diff` for handling large diffs in `main.py`, and updates to `generate_commit_message` in the same file to ensure truncation logic is applied when token limits are exceeded.
 
 ```markdown
 **Step-by-Step Thinking:**
 
 1. **Observations**:
-   - Added `truncate_diff` function to manage large diffs within token limits.
-   - Updated `generate_commit_message` to use `truncate_diff` when token limit exceeded.
+   - Added `truncate_diff` function to manage large diffs within token limits in `main.py`.
+   - Updated `generate_commit_message` to use `truncate_diff` when token limit is exceeded.
    - Added logging for token usage and truncation status.
 
 2. **Rationale**:
-   - **Commit type**: `feat`
+   - **Commit type**: `feat(main.py)`
    - **Reasoning**: `feat` is appropriate because `truncate_diff` introduces new functionality that improves how the system handles large diffs within token constraints.
 
 <COMMIT_MESSAGE>
-feat: add diff truncation to manage token limits in requests
+feat(main.py): add diff truncation to manage token limits in requests
 
 Introduce `truncate_diff` to handle large diffs by trimming them to fit within
 a specified token limit. Updated `generate_commit_message` to use this function
@@ -183,26 +188,26 @@ when token limits are exceeded.
 
 #### Example 2 (Dual Type Commit)
 
-**Input**: `git diff --staged` shows a new function `truncate_diff` for handling large diffs, a bug fix in `generate_commit_message` to handle token overflow, and related refactoring.
+**Input**: `git diff --staged` shows a new function `truncate_diff` for handling large diffs in `api.py`, a bug fix in `generate_commit_message` in `utils.py` to handle token overflow, and related refactoring.
 
 ```markdown
 **Step-by-Step Thinking:**
 
 1. **Observations**:
-   - Added `truncate_diff` function to manage large diffs within token limits.
-   - Fixed a bug in `generate_commit_message` that caused token overflow.
+   - Added `truncate_diff` function to manage large diffs within token limits in `api.py`.
+   - Fixed a bug in `generate_commit_message` in `utils.py` that caused token overflow.
    - Refactored code in `generate_commit_message` to improve readability.
 
 2. **Rationale**:
-   - **Commit types**: `feat, fix`
-   - **Reasoning**: `feat` for the new functionality in `truncate_diff`, and `fix` for addressing a critical token overflow bug.
+   - **Commit types**: `feat(api.py), fix(utils.py)`
+   - **Reasoning**: `feat` for the new functionality in `truncate_diff`, and `fix` for addressing a critical token overflow bug in `generate_commit_message`.
 
 <COMMIT_MESSAGE>
-feat, fix: add diff truncation and resolve token overflow bug
+feat(api.py), fix(utils.py): add diff truncation and resolve overflow bug
 
 Introduce `truncate_diff` to handle large diffs within token limits, retaining
 important context at the start and end. Fixed an overflow bug in
-`generate_commit_message` that caused token limits to be exceeded.
+`generate_commit_message` in `utils.py` that caused token limits to be exceeded.
 
 - Refactored `generate_commit_message` for improved readability.
 - Added logging for token count after truncation.
@@ -214,7 +219,7 @@ important context at the start and end. Fixed an overflow bug in
 ### Important Notes
 
 1. **Use Present Tense and Imperative Mood**: Write in the imperative (e.g., "Add function" rather than "Added function").
-2. **Start with Commit Type(s)**: Ensure each commit message begins with a commit type (e.g., `feat:`, `fix:`, or `feat, fix:`).
+2. **Include File or Module Scope**: After the commit type, add the affected file or module in parentheses to specify scope (e.g., `feat(main.py):`).
 3. **Dual Types Only When Necessary**: Use dual types sparingly, only when both changes are equally important.
 4. **Review for Completeness**: Double-check that all critical changes and reasons are covered in observations before finalizing the message."""
 
@@ -243,5 +248,5 @@ USER_MSG_APPENDIX = """---
 2. Think step-by-step to understand **WHAT** and **WHY** for each change, then choose the commit type(s).
 3. Write a complete commit message that captures **all details** of the changes. Place the final message between `<COMMIT_MESSAGE>` tags.
 
-Now begin your step-by-step review of the diff.
+Now begin your step-by-step review of the diff. Then, provide a masterful commit message in the required format between angled brackets.
 """
