@@ -204,82 +204,111 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
 def generate_commit_message(diff: str) -> str:
     """
     Generate a commit message using an external service.
+    Retries until a properly formatted commit message is received or maximum retries reached.
     """
     logger.debug(USE_EMOJIS)
-    INSTRUCT_PROMPT = SYSTEM_MESSAGE_EMOJI if USE_EMOJIS == True else SYSTEM_MESSAGE
+    INSTRUCT_PROMPT = SYSTEM_MESSAGE_EMOJI if USE_EMOJIS else SYSTEM_MESSAGE
 
     logger.debug("Entering generate_commit_message function.")
     headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
     messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
-    body = {"model": MODEL, "messages": messages, "max_tokens": MAX_TOKENS, "n": 1, "stop": None, "temperature": TEMPERATURE, "stream": True}
+    body = {
+        "model": MODEL,
+        "messages": messages,
+        "max_tokens": MAX_TOKENS,
+        "n": 1,
+        "stop": None,
+        "temperature": TEMPERATURE,
+        "stream": True
+    }
     request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + diff + USER_MSG_APPENDIX)
-    if request_tokens > MAX_TOKENS:
-        logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\n\ttruncating...")
-        truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, MAX_TOKENS)
-        messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}]
-        body["messages"] = messages
-        # Recalculate request tokens if necessary
-        request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_diff + USER_MSG_APPENDIX)
-        logger.info(f"After truncation, request tokens are {request_tokens}/{MAX_TOKENS}.")
+    max_retries = 5
+    retry_count = 0
 
+    while retry_count < max_retries:
+        if request_tokens > MAX_TOKENS:
+            logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\n\ttruncating...")
+            truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, MAX_TOKENS)
+            messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}]
+            body["messages"] = messages
+            request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_diff + USER_MSG_APPENDIX)
+            logger.info(f"After truncation, request tokens are {request_tokens}/{MAX_TOKENS}.")
 
-    # Additional checks before proceeding
-    if request_tokens > MAX_TOKENS:
-        warning_message = f"The generated commit message exceeds the maximum token limit of {MAX_TOKENS} tokens. Do you want to proceed?"
-        if not questionary.confirm(warning_message).ask():
-            console.print("[bold red]Commit generation aborted by user.[/bold red]")
+        # Additional checks before proceeding
+        if request_tokens > MAX_TOKENS:
+            warning_message = f"The generated commit message exceeds the maximum token limit of {MAX_TOKENS} tokens. Do you want to proceed?"
+            if not questionary.confirm(warning_message).ask():
+                console.print("[bold red]Commit generation aborted by user.[/bold red]")
+                return ""
+
+        deletions = sum(change["deletions"] for change in parse_diff(diff))
+        additions = sum(change["additions"] for change in parse_diff(diff))
+        logger.debug(f"deletions: {deletions}, additions: {additions}")
+
+        # Display warning if deletions are at least twice the additions
+        if additions > 0:
+            if deletions > 2 * additions:
+                warning_message = f"The commit message indicates a high number of deletions ({deletions}) relative to additions ({additions}). Do you want to proceed?"
+                if not questionary.confirm(warning_message).ask():
+                    console.print("[bold red]Commit generation aborted by user.[/bold red]")
+                    return ""
+        elif deletions > 0:
+            # Handle case where additions are zero but deletions exist
+            warning_message = f"The commit message indicates {deletions} deletions with no additions. Do you want to proceed?"
+            if not questionary.confirm(warning_message).ask():
+                console.print("[bold red]Commit generation aborted by user.[/bold red]")
+                return ""
+
+        try:
+            with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
+                prepend_msg = f"Sending {request_tokens} tokens to "
+                task = progress.add_task(f"{prepend_msg} {MODEL} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})...", start=False)
+                progress.start_task(task)
+
+                response = requests.post(API_URL, headers=headers, json=body, stream=True, timeout=60)
+                response.raise_for_status()
+
+                commit_message = ""
+                first_chunk_received = False
+
+                for chunk in response.iter_lines():
+                    if chunk:
+                        chunk_data = chunk.decode("utf-8").strip()
+                        if chunk_data.startswith("data: "):
+                            chunk_data = chunk_data[6:]
+                            try:
+                                data = json.loads(chunk_data)
+                                delta_content = data["choices"][0]["delta"].get("content", "")
+                                commit_message += delta_content
+
+                                if not first_chunk_received:
+                                    progress.stop()
+                                    first_chunk_received = True
+
+                                console.print(delta_content, end="")
+                            except json.JSONDecodeError as e:
+                                logger.error(f"Failed to decode JSON chunk: {e}")
+                                continue
+
+                commit_message_text = extract_tag_value(commit_message, "COMMIT_MESSAGE")
+                if commit_message_text:
+                    console.log("Commit message generated successfully.")
+                    return commit_message_text
+                else:
+                    logger.error("Could not extract COMMIT_MESSAGE tags. Retrying...")
+                    console.print("[bold red]Commit message format incorrect. Retrying...[/bold red]")
+                    retry_count += 1
+                    # Optionally, implement a short delay before retrying
+                    time.sleep(2)
+
+        except Exception as e:
+            logger.error(f"Failed to generate commit message: {e}")
+            console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
             return ""
 
-    deletions = sum(change["deletions"] for change in parse_diff(diff))
-    logger.debug(f"deletions,{str(deletions)}")
-    if deletions > 50:
-        warning_message = f"The commit message indicates a large number of deletions ({deletions} lines). Do you want to proceed?"
-        if not questionary.confirm(warning_message).ask():
-            console.print("[bold red]Commit generation aborted by user.[/bold red]")
-            return ""
-    try:
-        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
-            prepend_msg = f"Sending {request_tokens} tokens to "
-            task = progress.add_task(f"{prepend_msg} {MODEL} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})...", start=False)
-            progress.start_task(task)
-
-            response = requests.post(API_URL, headers=headers, json=body, stream=True, timeout=60)
-            response.raise_for_status()
-
-            commit_message = ""
-            first_chunk_received = False
-
-            for chunk in response.iter_lines():
-                if chunk:
-                    chunk_data = chunk.decode("utf-8").strip()
-                    if chunk_data.startswith("data: "):
-                        chunk_data = chunk_data[6:]
-                        try:
-                            data = json.loads(chunk_data)
-                            delta_content = data["choices"][0]["delta"].get("content", "")
-                            commit_message += delta_content
-
-                            if not first_chunk_received:
-                                progress.stop()
-                                first_chunk_received = True
-
-                            console.print(delta_content, end="")
-                        except json.JSONDecodeError as e:
-                            logger.error(f"Failed to decode JSON chunk: {e}")
-                            continue
-
-            commit_message_text = extract_tag_value(commit_message, "COMMIT_MESSAGE")
-            if not commit_message_text:
-                raise ValueError("Could not extract tag")
-
-
-
-            console.log("Commit message generated successfully.")
-            return commit_message_text
-    except Exception as e:
-        logger.error(f"Failed to generate commit message: {e}")
-        console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
-        return ""
+    # After max retries
+    console.print("[bold red]Failed to generate a properly formatted commit message after multiple attempts.[/bold red]")
+    return ""
 
 
 
@@ -602,67 +631,6 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
     else:
         console.print("[bold yellow]No diffs to display.[/bold yellow]")
 
-def parse_commit_log(log_output: str) -> List[Dict[str, Any]]:
-    """
-    Parse the git log output into a list of commit details.
-
-    Args:
-        log_output (str): The git log output.
-
-    Returns:
-        List[Dict[str, Any]]: List of parsed commit details.
-    """
-    commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
-    parsed_commits = []
-
-    for commit in commits:
-        lines = commit.split("\n")
-        if len(lines) < 2:
-            continue
-
-        commit_hash, commit_message = lines[0].split(" ", 1)
-        full_message = "\n".join(lines[1:]).strip()
-        parsed_commits.append({
-            "hash": commit_hash,
-            "message": commit_message,
-            "full_message": full_message
-        })
-
-    return parsed_commits
-
-
-def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
-    """
-    Display the commit summary with the specified number of commits.
-
-    Args:
-        num_commits (int): Number of commits to display.
-
-    Returns:
-        List[Dict[str, Any]]: List of parsed commit details.
-    """
-    try:
-        num_commits_arg = ["-n", str(num_commits)] if num_commits > 0 else []
-        result = subprocess.run(["git", "log", "--pretty=format:%h %s%n%b"] + num_commits_arg, stdout=subprocess.PIPE, check=True)
-        log_output = result.stdout.decode("utf-8")
-        parsed_commits = parse_commit_log(log_output)
-
-        # Display the commit summary
-        table = create_styled_table("Recent Commits", clean=True)
-        table.add_column("Hash", style=f"bold {THEME['secondary']}")
-        table.add_column("Message", style=THEME["text"])
-
-        for commit in parsed_commits:
-            table.add_row(commit["hash"], commit["message"])
-
-        console.print(Panel(table, style="", border_style="black", padding=(1, 2)))
-
-        return parsed_commits
-
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to get commit history: {e}")
-        console.print(f"[bold {THEME['error']}]Failed to get commit history: {e}[/bold {THEME['error']}]")
-        return []
 def configure_questionary_style():
     """
     Configure the style for questionary prompts.
@@ -682,33 +650,6 @@ def configure_questionary_style():
             ("instruction", f'fg:{THEME["text"]}'),
         ]
     )
-
-def select_commit(commits: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    """
-    Allow the user to select a commit from the summary.
-
-    Args:
-        commits (List[Dict[str, Any]]): List of parsed commit details.
-
-    Returns:
-        Optional[Dict[str, Any]]: The selected commit details or None if no selection is made.
-    """
-    choices = [questionary.Choice(f"{commit['hash']} {commit['message']}", value=commit) for commit in commits]
-
-    selected_commit = questionary.select("Select a commit to view details:", choices=choices).unsafe_ask()
-
-    return selected_commit
-
-def print_commit_details(commit: Dict[str, Any]):
-    """
-    Print the full details of the selected commit.
-
-    Args:
-        commit (Dict[str, Any]): The selected commit details.
-    """
-    commit_message_md = Markdown(f"### Commit {commit['hash']}\n\n{commit['full_message']}")
-    console.print(Panel(commit_message_md, title="Commit Details", border_style="dark_khaki", style="white on rgb(39,40,34)"))
-
 
 def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Table:
     """
@@ -1060,6 +1001,102 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
     choices.extend(base_choices)
 
     return title, repo_status, choices
+
+
+def parse_commit_log(log_output: str) -> List[Dict[str, Any]]:
+    """
+    Parse the git log output into a list of commit details.
+
+    Args:
+        log_output (str): The git log output.
+
+    Returns:
+        List[Dict[str, Any]]: List of parsed commit details.
+    """
+    commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
+    parsed_commits = []
+
+    for commit in commits:
+        lines = commit.split("\n")
+        if len(lines) < 2:
+            continue
+
+        # Ensure the first line contains both a commit hash and a commit message
+        if " " in lines[0]:
+            commit_hash, commit_message = lines[0].split(" ", 1)
+            full_message = "\n".join(lines[1:]).strip()
+            parsed_commits.append({
+                "hash": commit_hash,
+                "message": commit_message,
+                "full_message": full_message
+            })
+        else:
+            logger.warning(f"Skipping malformed commit line: {lines[0]}")
+
+    return parsed_commits
+
+
+def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
+    """
+    Display the commit summary with the specified number of commits.
+
+    Args:
+        num_commits (int): Number of commits to display.
+
+    Returns:
+        List[Dict[str, Any]]: List of parsed commit details.
+    """
+    try:
+        num_commits_arg = ["-n", str(num_commits)] if num_commits > 0 else []
+        result = subprocess.run(["git", "log", "--pretty=format:%h %s%n%b"] + num_commits_arg, stdout=subprocess.PIPE, check=True)
+        log_output = result.stdout.decode("utf-8")
+        parsed_commits = parse_commit_log(log_output)
+
+        # Display the commit summary
+        table = create_styled_table("Recent Commits", clean=True)
+        table.add_column("Hash", style=f"bold {THEME['secondary']}")
+        table.add_column("Message", style=THEME["text"])
+
+        for commit in parsed_commits:
+            table.add_row(commit["hash"], commit["message"])
+
+        console.print(Panel(table, style="", border_style="black", padding=(1, 2)))
+
+        return parsed_commits
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to get commit history: {e}")
+        console.print(f"[bold {THEME['error']}]Failed to get commit history: {e}[/bold {THEME['error']}]")
+        return []
+
+
+def select_commit(commits: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """
+    Allow the user to select a commit from the summary.
+
+    Args:
+        commits (List[Dict[str, Any]]): List of parsed commit details.
+
+    Returns:
+        Optional[Dict[str, Any]]: The selected commit details or None if no selection is made.
+    """
+    choices = [questionary.Choice(f"{commit['hash']} {commit['message']}", value=commit) for commit in commits]
+
+    selected_commit = questionary.select("Select a commit to view details:", choices=choices).unsafe_ask()
+
+    return selected_commit
+
+
+def print_commit_details(commit: Dict[str, Any]):
+    """
+    Print the full details of the selected commit.
+
+    Args:
+        commit (Dict[str, Any]): The selected commit details.
+    """
+    commit_message_md = Markdown(commit['full_message'])
+    console.print(Panel(commit_message_md, title=f"Commit {commit['hash']}", border_style="dark_khaki", style="white on rgb(39,40,34)"))
+
 
 def main(reload: bool = False):
     """
