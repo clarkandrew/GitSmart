@@ -201,6 +201,7 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
 
     return truncated_diff
 
+
 def generate_commit_message(diff: str) -> str:
     """
     Generate a commit message using an external service.
@@ -311,7 +312,6 @@ def generate_commit_message(diff: str) -> str:
     return ""
 
 
-
 def parse_diff(diff: str) -> List[Dict[str, Any]]:
     """
     Parse the git diff to extract file names, additions, and deletions.
@@ -342,6 +342,107 @@ def parse_diff(diff: str) -> List[Dict[str, Any]]:
         file_changes.append({"file": current_file, "additions": additions, "deletions": deletions})
 
     return file_changes
+
+def summarize_selected_commits():
+    """
+    Summarize selected commit messages from the last 30 commits.
+    """
+    commits = display_commit_summary(30)
+    if not commits:
+        console.print("[bold yellow]No commits available to summarize.[/bold yellow]")
+        return
+
+    commit_choices = [questionary.Choice(f"{commit['hash']} {commit['message']}", value=commit) for commit in commits]
+
+    selected_commits = questionary.checkbox(
+        "Select commits to summarize:",
+        choices=commit_choices,
+        style=configure_questionary_style(),
+        instruction="(Use space to select, enter to confirm)"
+    ).unsafe_ask()
+
+    if not selected_commits:
+        console.print("[bold yellow]No commits selected for summarization.[/bold yellow]")
+        return
+
+    combined_messages = "\n\n---\n\n".join(f"{commit['hash']} {commit['message']}\n{commit['full_message']}" for commit in selected_commits)
+    console.print(Panel(Markdown(combined_messages), title="Commit Messages", border_style="green", style="white on rgb(39,40,34)"))
+    # Send the combined commit messages to the summarization API
+    summary = generate_summary(combined_messages)
+    if summary:
+        console.print(Panel(summary, title="Summarized Commit Messages", border_style="green", style="white on rgb(39,40,34)"))
+    else:
+        console.print("[bold red]Failed to generate summary.[/bold red]")
+
+
+def generate_summary(text: str) -> Optional[str]:
+    """
+    Generate a summary for the provided text using the external API.
+
+    Args:
+        text (str): The text to summarize.
+
+    Returns:
+        Optional[str]: The summarized text or None if summarization fails.
+    """
+    try:
+        headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
+        messages = [{"role": "system", "content": "Summarize the following commit messages into a concise summary."},
+                    {"role": "user", "content": text}]
+        body = {
+            "model": MODEL,
+            "messages": messages,
+            "max_tokens": MAX_TOKENS,
+            "n": 1,
+            "stop": None,
+            "temperature": TEMPERATURE,
+            "stream": True
+        }
+        console.log(messages)
+
+        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
+            prepend_msg = f"Sending {count_tokens_in_string(text)} tokens to "
+            task = progress.add_task(f"{prepend_msg} {MODEL} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})...", start=False)
+            progress.start_task(task)
+
+            response = requests.post(API_URL, headers=headers, json=body, stream=True, timeout=60)
+            response.raise_for_status()
+
+            summary = ""
+            first_chunk_received = False
+
+            for chunk in response.iter_lines():
+                if chunk:
+                    chunk_data = chunk.decode("utf-8").strip()
+                    if chunk_data.startswith("data: "):
+                        chunk_data = chunk_data[6:]
+                        try:
+                            data = json.loads(chunk_data)
+                            delta_content = data["choices"][0]["delta"].get("content", "")
+                            summary += delta_content
+
+                            if not first_chunk_received:
+                                progress.stop()
+                                first_chunk_received = True
+
+                            console.print(delta_content, end="")
+                        except json.JSONDecodeError as e:
+                            logger.error(f"Failed to decode JSON chunk: {e}")
+                            continue
+
+            summary_text = summary
+            if summary_text:
+                logger.info("Summary generated successfully.")
+                return summary_text
+            else:
+                logger.error("Could not extract SUMMARY tags.")
+                console.print("[bold red]Summary format incorrect.[/bold red]")
+                return None
+
+    except Exception as e:
+        logger.error(f"Failed to generate summary: {e}")
+        console.print(f"[bold red]Failed to generate summary: {e}[/bold red]")
+        return None
 
 
 def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]], diff: str, unstaged_diff: str):
@@ -386,6 +487,8 @@ def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes
             console.print(_panel)
         else:
             console.print(f"[bold red]No diff available for {file}.[/bold red]")
+
+
 
 
 def get_file_diff(file: str, staged: bool = True) -> List[str]:
@@ -631,6 +734,7 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
     else:
         console.print("[bold yellow]No diffs to display.[/bold yellow]")
 
+
 def configure_questionary_style():
     """
     Configure the style for questionary prompts.
@@ -650,6 +754,7 @@ def configure_questionary_style():
             ("instruction", f'fg:{THEME["text"]}'),
         ]
     )
+
 
 def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Table:
     """
@@ -719,7 +824,6 @@ def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
 
-
 def get_tracked_files() -> List[str]:
     """
     Get a list of all tracked files in the repository.
@@ -746,6 +850,7 @@ def select_model():
 def reset_console():
     console.clear()
     print("\n" * 25)
+
 
 def handle_ignore_files():
     """
@@ -779,6 +884,7 @@ def handle_ignore_files():
     else:
         console.print("[bold yellow]No files or patterns selected to ignore.[/bold yellow]")
 
+
 def save_gitignore_section(ignored_files: List[str]):
     """
     Save the list of ignored files to a specific section in the .gitignore file.
@@ -810,6 +916,7 @@ def save_gitignore_section(ignored_files: List[str]):
 
     with open(gitignore_path, "w") as f:
         f.write(content)
+
 
 def load_gitignore() -> List[str]:
     """
@@ -846,6 +953,7 @@ def load_gitignore() -> List[str]:
 
     return ignored_files
 
+
 def update_gitignore(selected_files: List[str]):
     """
     Update the .gitignore file by adding newly selected ignored files or patterns.
@@ -864,6 +972,7 @@ def update_gitignore(selected_files: List[str]):
     all_ignored = sorted(existing_ignored.union(new_ignored))
     save_gitignore_section(all_ignored)
 
+
 def get_repo_name() -> str:
     """
     Function to get the repository name.
@@ -877,6 +986,7 @@ def get_repo_name() -> str:
         return repo_name
     except subprocess.CalledProcessError:
         return "Unknown Repository"
+
 
 def get_git_remotes() -> Dict[str, str]:
     """
@@ -922,6 +1032,7 @@ def push_to_remote(remote: str, url: str) -> str:
         logger.error(f"Failed to push to {remote}: {e}")
         return f"Failed to push to {remote}: {e}"
 
+
 def handle_push_repo() -> List[str]:
     """
     Handle pushing commits to selected remote repositories.
@@ -965,6 +1076,7 @@ def handle_push_repo() -> List[str]:
 
     return status_messages
 
+
 def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> Tuple[str, str, List[str]]:
     """
     Determine the appropriate menu title and options based on the current repository state.
@@ -977,7 +1089,7 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
         Tuple[str, str, List[str]]: A tuple containing the menu title, repository status, and the list of menu options.
     """
     num_staged_files = len(staged_changes)
-    base_choices = ["Ignore Files", "View Commit History", "Push Repo", "Exit"]
+    base_choices = ["Ignore Files", "View Commit History", "Push Repo", "Summarize Commits", "Exit"]
     choices = []
     title = "Select an action:"
 
@@ -1098,6 +1210,35 @@ def print_commit_details(commit: Dict[str, Any]):
     console.print(Panel(commit_message_md, title=f"Commit {commit['hash']}", border_style="dark_khaki", style="white on rgb(39,40,34)"))
 
 
+
+
+def run_git_command(command: List[str]) -> str:
+    """
+    Run a git command and return the result.
+
+    Args:
+        command (List[str]): The git command to run.
+
+    Returns:
+        str: Status message indicating the result of the command.
+    """
+    try:
+        subprocess.run(command, check=True)
+        return f"Success: {' '.join(command)}"
+    except subprocess.CalledProcessError as e:
+        error_message = f"Error: {' '.join(command)}. Error: {e}"
+        logger.error(error_message)
+        return error_message
+    except FileNotFoundError as e:
+        error_message = f"Error: Command not found. {' '.join(command)}. Error: {e}"
+        logger.error(error_message)
+        return error_message
+    except Exception as e:
+        error_message = f"Unexpected error: {' '.join(command)}. Error: {e}"
+        logger.error(error_message)
+        return error_message
+
+
 def main(reload: bool = False):
     """
     Main function to generate and commit a message based on staged changes.
@@ -1177,6 +1318,12 @@ def main(reload: bool = False):
                     status_msg = handle_push_repo()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
+
+                elif action == "Summarize Commits":
+                    reset_console()
+                    summarize_selected_commits()
+                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+
                 elif action == "Exit":
                     reset_console()
                     console.print("[bold red]Goodbye...[/bold red]")
@@ -1209,6 +1356,7 @@ def main(reload: bool = False):
                 console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
                 sys.stdout.flush()
 
+        import threading
         refresh_thread = threading.Thread(target=auto_refresh, daemon=True)
         refresh_thread.start()
 
