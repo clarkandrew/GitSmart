@@ -602,8 +602,7 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
     else:
         console.print("[bold yellow]No diffs to display.[/bold yellow]")
 
-
-def parse_commit_log(log_output: str) -> List[Tuple[str, Text, int, int]]:
+def parse_commit_log(log_output: str) -> List[Dict[str, Any]]:
     """
     Parse the git log output into a list of commit details.
 
@@ -611,7 +610,7 @@ def parse_commit_log(log_output: str) -> List[Tuple[str, Text, int, int]]:
         log_output (str): The git log output.
 
     Returns:
-        List[Tuple[str, Text, int, int]]: List of parsed commit details.
+        List[Dict[str, Any]]: List of parsed commit details.
     """
     commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
     parsed_commits = []
@@ -622,52 +621,48 @@ def parse_commit_log(log_output: str) -> List[Tuple[str, Text, int, int]]:
             continue
 
         commit_hash, commit_message = lines[0].split(" ", 1)
-        commit_message = Text(commit_message, style="bold")
-
-        additions = deletions = 0
-        for line in lines[1:]:
-            if "files changed" in line:
-                parts = line.split(", ")
-                for part in parts:
-                    if "insertion" in part:
-                        additions = int(part.split()[0])
-                    elif "deletion" in part:
-                        deletions = int(part.split()[0])
-
-        parsed_commits.append((commit_hash, commit_message, additions, deletions))
+        full_message = "\n".join(lines[1:]).strip()
+        parsed_commits.append({
+            "hash": commit_hash,
+            "message": commit_message,
+            "full_message": full_message
+        })
 
     return parsed_commits
 
 
-def display_commit_history(num_commits: int = 5):
+def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
     """
-    Display the commit history with the specified number of commits.
+    Display the commit summary with the specified number of commits.
 
     Args:
         num_commits (int): Number of commits to display.
+
+    Returns:
+        List[Dict[str, Any]]: List of parsed commit details.
     """
     try:
         num_commits_arg = ["-n", str(num_commits)] if num_commits > 0 else []
-        result = subprocess.run(["git", "log", "--pretty=format:%h %s", "--stat"] + num_commits_arg, stdout=subprocess.PIPE, check=True)
+        result = subprocess.run(["git", "log", "--pretty=format:%h %s%n%b"] + num_commits_arg, stdout=subprocess.PIPE, check=True)
         log_output = result.stdout.decode("utf-8")
         parsed_commits = parse_commit_log(log_output)
 
+        # Display the commit summary
         table = create_styled_table("Recent Commits", clean=True)
         table.add_column("Hash", style=f"bold {THEME['secondary']}")
         table.add_column("Message", style=THEME["text"])
-        table.add_column("Additions", style=THEME["success"])
-        table.add_column("Deletions", style=THEME["error"])
 
-        for commit_hash, commit_message, additions, deletions in parsed_commits:
-            table.add_row(commit_hash, commit_message, f"+{additions}", f"-{deletions}")
+        for commit in parsed_commits:
+            table.add_row(commit["hash"], commit["message"])
 
         console.print(Panel(table, style="", border_style="black", padding=(1, 2)))
+
+        return parsed_commits
 
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to get commit history: {e}")
         console.print(f"[bold {THEME['error']}]Failed to get commit history: {e}[/bold {THEME['error']}]")
-
-
+        return []
 def configure_questionary_style():
     """
     Configure the style for questionary prompts.
@@ -687,6 +682,32 @@ def configure_questionary_style():
             ("instruction", f'fg:{THEME["text"]}'),
         ]
     )
+
+def select_commit(commits: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """
+    Allow the user to select a commit from the summary.
+
+    Args:
+        commits (List[Dict[str, Any]]): List of parsed commit details.
+
+    Returns:
+        Optional[Dict[str, Any]]: The selected commit details or None if no selection is made.
+    """
+    choices = [questionary.Choice(f"{commit['hash']} {commit['message']}", value=commit) for commit in commits]
+
+    selected_commit = questionary.select("Select a commit to view details:", choices=choices).unsafe_ask()
+
+    return selected_commit
+
+def print_commit_details(commit: Dict[str, Any]):
+    """
+    Print the full details of the selected commit.
+
+    Args:
+        commit (Dict[str, Any]): The selected commit details.
+    """
+    commit_message_md = Markdown(f"### Commit {commit['hash']}\n\n{commit['full_message']}")
+    console.print(Panel(commit_message_md, title="Commit Details", border_style="dark_khaki", style="white on rgb(39,40,34)"))
 
 
 def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Table:
@@ -1053,7 +1074,7 @@ def main(reload: bool = False):
     questionary_style = configure_questionary_style()
     repo_name = get_repo_name()  # Function to get the repository name
 
-    display_commit_history(3)
+    display_commit_summary(3)
     exit_prompted = 0
 
     def loop():
@@ -1102,9 +1123,11 @@ def main(reload: bool = False):
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "View Commit History":
-                    console.clear()
                     reset_console()
-                    display_commit_history(0)
+                    commits = display_commit_summary(20)
+                    selected_commit = select_commit(commits)
+                    if selected_commit:
+                        print_commit_details(selected_commit)
 
                 elif action == "Select Model":
                     reset_console()
