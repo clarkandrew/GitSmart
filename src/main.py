@@ -11,7 +11,7 @@ import questionary
 import time
 import sys
 from typing import List, Dict, Any, Tuple, Optional
-from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX, SYSTEM_MESSAGE_EMOJI
+from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX, SYSTEM_MESSAGE_EMOJI,SUMMARIZE_COMMIT_PROMPT
 from rich.console import Console, Group
 from rich.syntax import Syntax
 from rich.align import Align
@@ -387,7 +387,7 @@ def generate_summary(text: str) -> Optional[str]:
     """
     try:
         headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
-        messages = [{"role": "system", "content": "Summarize the following commit messages into a concise summary."},
+        messages = [{"role": "system", "content": SUMMARIZE_COMMIT_PROMPT},
                     {"role": "user", "content": text}]
         body = {
             "model": MODEL,
