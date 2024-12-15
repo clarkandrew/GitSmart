@@ -842,8 +842,20 @@ def get_and_display_status():
 
 
 def select_model():
+    history_dir = ".C0MMIT"
+
+    # Check if .history exists and is a file
+    if os.path.exists(history_dir) and not os.path.isdir(history_dir):
+        raise FileExistsError(f"A file named '{history_dir}' already exists. Please remove or rename it.")
+
+    # Ensure the .history directory exists
+    os.makedirs(history_dir, exist_ok=True)
+
+    # Use a valid file path for FileHistory
+    history_file = os.path.join(history_dir, "model_selection")
+
     global MODEL
-    MODEL = questionary.text("Select a model:\n",history=FileHistory(".history/model_selection")).ask()
+    MODEL = questionary.text("Select a model:\n", history=FileHistory(history_file)).ask()
     return MODEL
 
 
