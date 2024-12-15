@@ -21,7 +21,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.padding import Padding
 from rich.markdown import Markdown
-
+from prompt_toolkit.history import FileHistory
 
 # Initialize the config parser
 config = configparser.ConfigParser()
@@ -843,7 +843,7 @@ def get_and_display_status():
 
 def select_model():
     global MODEL
-    MODEL = questionary.text("Select a model:\n").ask()
+    MODEL = questionary.text("Select a model:\n",history=FileHistory(".history/model_selection")).ask()
     return MODEL
 
 

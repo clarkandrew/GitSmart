@@ -248,7 +248,7 @@ USER_MSG_APPENDIX = """---
 2. Think step-by-step to understand **WHAT** and **WHY** for each change, then choose the commit type(s).
 3. Write a complete commit message that captures **all details** of the changes. Place the final message between `<COMMIT_MESSAGE>` tags.
 
-Now begin your step-by-step review of the diff. Then, provide a masterful commit message in the required format between angled brackets.
+Now begin your step-by-step review of the changes in this commit. Then, provide a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
 """
 
 
