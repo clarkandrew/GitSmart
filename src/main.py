@@ -212,7 +212,7 @@ def generate_commit_message(diff: str) -> str:
 
     logger.debug("Entering generate_commit_message function.")
     headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
-    messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": diff + USER_MSG_APPENDIX}]
+    messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF:\n" + diff + USER_MSG_APPENDIX}]
     body = {
         "model": MODEL,
         "messages": messages,
