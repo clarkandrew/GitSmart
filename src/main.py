@@ -2,6 +2,7 @@ import re
 import subprocess
 import requests
 import os
+from questionary import Style, Choice
 from count_tokens import count_tokens_in_string
 import json
 import configparser
@@ -11,7 +12,9 @@ import questionary
 import time
 import sys
 from typing import List, Dict, Any, Tuple, Optional
-from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX, SYSTEM_MESSAGE_EMOJI,SUMMARIZE_COMMIT_PROMPT
+from prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX, SYSTEM_MESSAGE_EMOJI, SUMMARIZE_COMMIT_PROMPT
+
+# [UI Enhancement] Import additional Rich features for improved styling
 from rich.console import Console, Group
 from rich.syntax import Syntax
 from rich.align import Align
@@ -37,20 +40,29 @@ TEMPERATURE = float(config["API"]["temperature"])
 USE_EMOJIS = True if config["PROMPTING"]["use_emojis"] == "true" or config["PROMPTING"]["use_emojis"] == True else False
 DEBUG = True if config["APP"]["debug"] == "true" or config["APP"]["debug"] == True else False
 
-
 # Initialize logger and console for logging and output
 logging.basicConfig(level=logging.DEBUG if DEBUG else logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+# [UI Enhancement] Use a custom theme to unify color usage across Rich
 console = Console()
 
-# Theme configuration
-THEME = {"primary": "#e5c07b", "secondary": "#ffcb6b", "accent": "#8ea6c0", "success": "#98c379", "error": "#e06c75", "warning": "#e5c07b", "background": "#282c34", "text": "#abb2bf"}
+# [UI Enhancement] Introduce colorblind-safe or more cohesive palette
+THEME = {
+    "primary": "#FFFFFF",     # Teal for primary
+    "secondary": "#6AD0FF",   # Orange for secondary
+    "accent": "#6AD0FF",      # Warm red for accent
+    "success": "#96DF71",     # Soft green for success
+    "error": "#D62828",       # Bold red for errors
+    "warning": "#F2BB05",     # Golden for warnings
+    "background": "#1E1F26",  # Dark background
+    "text": "#E6E6E6"         # Light text
+}
 
-# Style configurations
+# [UI Enhancement] Update panel/border styles for improved clarity
 PANEL_STYLE = f"bold {THEME['text']} on {THEME['background']}"
 BORDER_STYLE = THEME["accent"]
 HEADER_STYLE = f"bold {THEME['primary']}"
-
 
 class StyledCLIPrinter:
     """
@@ -65,7 +77,14 @@ class StyledCLIPrinter:
         Print a styled message to the console.
         """
         content = Text(message, style=style)
-        panel = Panel(content, title=title, border_style=BORDER_STYLE, style=PANEL_STYLE, padding=(1, 2)) if title else content
+        # [UI Enhancement] Use simpler, cohesive panel styling
+        panel = Panel(
+            content,
+            title=title,
+            border_style=BORDER_STYLE,
+            style=PANEL_STYLE,
+            padding=(1, 2)
+        ) if title else content
         self.console.print(panel)
 
     def print_error(self, message: str, title: str = "Error"):
@@ -91,20 +110,27 @@ class StyledCLIPrinter:
         Print a divider line to the console.
         """
         self.console.print()
-        self.console.rule(title, style=BORDER_STYLE)
+        # [UI Enhancement] Thinner divider style for clarity
+        self.console.rule(title, style=f"{THEME['primary']}")
         self.console.print()
 
-
 printer = StyledCLIPrinter(console)
-
 
 def create_styled_table(title: Optional[str] = None, clean: bool = False) -> Table:
     """
     Create a styled table for displaying data.
     """
     padding = (0, 1) if clean else (2, 2)
-    return Table(show_header=False, header_style=None if clean else HEADER_STYLE, border_style=None, show_lines=False, box=None, padding=padding, title=title, expand=clean)
-
+    return Table(
+        show_header=False,
+        header_style=None if clean else HEADER_STYLE,
+        border_style=None,
+        show_lines=False,
+        box=None,
+        padding=padding,
+        title=title,
+        expand=clean
+    )
 
 def extract_tag_value(text: str, tag: str) -> str:
     """
@@ -122,7 +148,6 @@ def extract_tag_value(text: str, tag: str) -> str:
         console.log(f"Could not extract `{tag}` because {str(e)}\n")
         return ""
 
-
 def get_git_diff(staged: bool = True) -> str:
     """
     Get the git diff of staged or unstaged changes.
@@ -137,7 +162,6 @@ def get_git_diff(staged: bool = True) -> str:
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to get {'staged' if staged else 'unstaged'} diff: {e}")
         return ""
-
 
 def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_tokens: int) -> str:
     """
@@ -201,7 +225,6 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
 
     return truncated_diff
 
-
 def generate_commit_message(diff: str) -> str:
     """
     Generate a commit message using an external service.
@@ -212,9 +235,12 @@ def generate_commit_message(diff: str) -> str:
 
     logger.debug("Entering generate_commit_message function.")
     headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
-    messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF:\n" + diff + USER_MSG_APPENDIX}]
+    messages = [
+        {"role": "system", "content": INSTRUCT_PROMPT},
+        {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF:\n" + diff + USER_MSG_APPENDIX},
+    ]
     body = {
-        "model": MODEL,
+        "model": "openrouter/gemini-2.0-flash-thinking-exp",
         "messages": messages,
         "max_tokens": MAX_TOKENS,
         "n": 1,
@@ -230,7 +256,10 @@ def generate_commit_message(diff: str) -> str:
         if request_tokens > MAX_TOKENS:
             logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\n\ttruncating...")
             truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, MAX_TOKENS)
-            messages = [{"role": "system", "content": INSTRUCT_PROMPT}, {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}]
+            messages = [
+                {"role": "system", "content": INSTRUCT_PROMPT},
+                {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}
+            ]
             body["messages"] = messages
             request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_diff + USER_MSG_APPENDIX)
             logger.info(f"After truncation, request tokens are {request_tokens}/{MAX_TOKENS}.")
@@ -238,7 +267,7 @@ def generate_commit_message(diff: str) -> str:
         # Additional checks before proceeding
         if request_tokens > MAX_TOKENS:
             warning_message = f"The generated commit message exceeds the maximum token limit of {MAX_TOKENS} tokens. Do you want to proceed?"
-            if not questionary.confirm(warning_message).ask():
+            if not questionary.confirm(warning_message, style=configure_questionary_style()).ask():
                 console.print("[bold red]Commit generation aborted by user.[/bold red]")
                 return ""
 
@@ -250,28 +279,27 @@ def generate_commit_message(diff: str) -> str:
         if additions > 0:
             if deletions > 2 * additions:
                 warning_message = f"The commit message indicates a high number of deletions ({deletions}) relative to additions ({additions}). Do you want to proceed?"
-                if not questionary.confirm(warning_message).ask():
+                if not questionary.confirm(warning_message, style=configure_questionary_style()).ask():
                     console.print("[bold red]Commit generation aborted by user.[/bold red]")
                     return ""
         elif deletions > 0:
             # Handle case where additions are zero but deletions exist
             warning_message = f"The commit message indicates {deletions} deletions with no additions. Do you want to proceed?"
-            if not questionary.confirm(warning_message).ask():
+            if not questionary.confirm(warning_message, style=configure_questionary_style()).ask():
                 console.print("[bold red]Commit generation aborted by user.[/bold red]")
                 return ""
 
         try:
-            with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
-                prepend_msg = f"Sending {request_tokens} tokens to "
-                task = progress.add_task(f"{prepend_msg} {MODEL} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})...", start=False)
-                progress.start_task(task)
+            with console.status("[bold green]Analyzing changes to staged files...[/bold green]") as status:
+                prepend_msg = f"> Analyzing changes to staged files with {clean_model_name(MODEL)} ({request_tokens} tokens)"
+                status.update(prepend_msg)
 
                 response = requests.post(API_URL, headers=headers, json=body, stream=True, timeout=60)
                 response.raise_for_status()
 
-                commit_message = ""
+                commit_message = "Analyzing changes to staged files...\n"
                 first_chunk_received = False
-
+                commit_content = ""
                 for chunk in response.iter_lines():
                     if chunk:
                         chunk_data = chunk.decode("utf-8").strip()
@@ -283,23 +311,24 @@ def generate_commit_message(diff: str) -> str:
                                 commit_message += delta_content
 
                                 if not first_chunk_received:
-                                    progress.stop()
                                     first_chunk_received = True
-
-                                console.print(delta_content, end="")
+                                if "<COMMIT_MESSAGE>" not in commit_message:
+                                    # status.update("Writing commit message...")
+                                    status.update(commit_message)
+                                else:
+                                    status.update("Writing commit message...")
                             except json.JSONDecodeError as e:
-                                logger.error(f"Failed to decode JSON chunk: {e}")
+                                # logger.error(f"Failed to decode JSON chunk: {e}")
                                 continue
 
                 commit_message_text = extract_tag_value(commit_message, "COMMIT_MESSAGE")
                 if commit_message_text:
-                    console.log("Commit message generated successfully.")
+                    # console.log("Commit message generated successfully.")
                     return commit_message_text
                 else:
                     logger.error("Could not extract COMMIT_MESSAGE tags. Retrying...")
                     console.print("[bold red]Commit message format incorrect. Retrying...[/bold red]")
                     retry_count += 1
-                    # Optionally, implement a short delay before retrying
                     time.sleep(2)
 
         except Exception as e:
@@ -307,10 +336,8 @@ def generate_commit_message(diff: str) -> str:
             console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
             return ""
 
-    # After max retries
     console.print("[bold red]Failed to generate a properly formatted commit message after multiple attempts.[/bold red]")
     return ""
-
 
 def parse_diff(diff: str) -> List[Dict[str, Any]]:
     """
@@ -352,13 +379,16 @@ def summarize_selected_commits():
         console.print("[bold yellow]No commits available to summarize.[/bold yellow]")
         return
 
-    commit_choices = [questionary.Choice(f"{commit['hash']} {commit['message']}", value=commit) for commit in commits]
+    commit_choices = [
+        questionary.Choice(f"{commit['hash']} {commit['message']}", value=commit)
+        for commit in commits
+    ]
 
     selected_commits = questionary.checkbox(
         "Select commits to summarize:",
         choices=commit_choices,
         style=configure_questionary_style(),
-        instruction="(Use space to select, enter to confirm)"
+        instruction="(Use space to select, enter to confirm)",
     ).unsafe_ask()
 
     if not selected_commits:
@@ -366,14 +396,19 @@ def summarize_selected_commits():
         return
 
     combined_messages = "\n\n---\n\n".join(f"{commit['hash']} {commit['message']}\n{commit['full_message']}" for commit in selected_commits)
-    console.print(Panel(Markdown(combined_messages), title="Commit Messages", border_style="green", style="white on rgb(39,40,34)"))
-    # Send the combined commit messages to the summarization API
+    console.print(Panel(Markdown(combined_messages), title="Commit Messages", border_style="#0D1116", style="white on #0D1116"))
     summary = generate_summary(combined_messages)
     if summary:
-        console.print(Panel(summary, title="Summarized Commit Messages", border_style="green", style="white on rgb(39,40,34)"))
+        console.print(
+            Padding(Panel(
+                Align.center(Padding(summary,(3,7))),
+                title=f"Summarized Commits",
+                border_style="#ffffff",
+                style="#ffffff on #0D1116"
+            ),(3,15))
+        )
     else:
         console.print("[bold red]Failed to generate summary.[/bold red]")
-
 
 def generate_summary(text: str) -> Optional[str]:
     """
@@ -387,8 +422,10 @@ def generate_summary(text: str) -> Optional[str]:
     """
     try:
         headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
-        messages = [{"role": "system", "content": SUMMARIZE_COMMIT_PROMPT},
-                    {"role": "user", "content": text}]
+        messages = [
+            {"role": "system", "content": SUMMARIZE_COMMIT_PROMPT},
+            {"role": "user", "content": text}
+        ]
         body = {
             "model": MODEL,
             "messages": messages,
@@ -398,12 +435,13 @@ def generate_summary(text: str) -> Optional[str]:
             "temperature": TEMPERATURE,
             "stream": True
         }
-        console.log(messages)
 
-        with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}\npress ENTER again to auto-commit upon generation"), transient=True) as progress:
+        with console.status("[bold green]Analyzing changes to staged files...[/bold green]") as status:
             prepend_msg = f"Sending {count_tokens_in_string(text)} tokens to "
-            task = progress.add_task(f"{prepend_msg} {MODEL} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})...", start=False)
-            progress.start_task(task)
+            status.update(
+                f"{prepend_msg} {clean_model_name(MODEL)} ({TEMPERATURE})" if len(MODEL) < 30 else f"{prepend_msg} {MODEL[0:31]} ({TEMPERATURE})..."
+            )
+
 
             response = requests.post(API_URL, headers=headers, json=body, stream=True, timeout=60)
             response.raise_for_status()
@@ -422,10 +460,11 @@ def generate_summary(text: str) -> Optional[str]:
                             summary += delta_content
 
                             if not first_chunk_received:
-                                progress.stop()
+
                                 first_chunk_received = True
 
                             console.print(delta_content, end="")
+                            status.update(summary)
                         except json.JSONDecodeError as e:
                             logger.error(f"Failed to decode JSON chunk: {e}")
                             continue
@@ -443,7 +482,6 @@ def generate_summary(text: str) -> Optional[str]:
         logger.error(f"Failed to generate summary: {e}")
         console.print(f"[bold red]Failed to generate summary: {e}[/bold red]")
         return None
-
 
 def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]], diff: str, unstaged_diff: str):
     """
@@ -464,31 +502,36 @@ def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes
         console.print("[bold yellow]No changes to review.[/bold yellow]")
         return
 
-    # Prepare choices with staged files pre-checked and labeled
-    choices = [questionary.Choice(title=f"{file} [Staged]" if file in staged_files else file, value=file, checked=file in staged_files) for file in sorted(all_files)]
+    choices = [
+        questionary.Choice(
+            title=f"{file} [Staged]" if file in staged_files else file,
+            value=file,
+            checked=file in staged_files,
+            style=configure_questionary_style()
+        )
+        for file in sorted(all_files)
+    ]
 
-    # Prompt the user to select files to review
-    selected_files = questionary.checkbox("Select files to review their diffs:", choices=choices, style=configure_questionary_style(), instruction="(Use space to select, enter to confirm)").unsafe_ask()
+    selected_files = questionary.checkbox(
+        "Select files to review their diffs:",
+        choices=choices,
+        style=configure_questionary_style(),
+        instruction="(Use space to select, enter to confirm)"
+    ).unsafe_ask()
 
     if not selected_files:
         console.print("[bold yellow]No files selected for review.[/bold yellow]")
         return
 
     for file in selected_files:
-        # Determine if the file is staged
         is_staged = file in staged_files
-
-        # Get the appropriate diff for the file
         file_diff = get_file_diff(file, staged=is_staged)
 
         if file_diff:
-            # Display the diff in a styled panel
-            _panel = display_diff_panel(file, file_diff, staged_changes, panel_width=100)
+            _panel = display_diff_panel(file, file_diff, staged_changes + unstaged_changes, panel_width=100)
             console.print(_panel)
         else:
             console.print(f"[bold red]No diff available for {file}.[/bold red]")
-
-
 
 
 def get_file_diff(file: str, staged: bool = True) -> List[str]:
@@ -511,7 +554,6 @@ def get_file_diff(file: str, staged: bool = True) -> List[str]:
         logger.error(f"Failed to get diff for {file}: {e}")
         console.print(f"[bold red]Failed to get diff for {file}: {e}[/bold red]")
         return []
-
 
 def run_git_command(command: List[str]) -> str:
     """
@@ -539,7 +581,6 @@ def run_git_command(command: List[str]) -> str:
         logger.error(error_message)
         return error_message
 
-
 def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
     """
     Handle the staging or unstaging of files.
@@ -555,7 +596,11 @@ def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
         return f"No {action}d changes detected."
 
     choices = [f"{change['file']} (+{change['additions']}/-{change['deletions']})" for change in changes]
-    selected_files = questionary.checkbox(f"Select files to {action}:", choices=choices).unsafe_ask()
+    selected_files = questionary.checkbox(
+        f"Select files to {action}:",
+        choices=choices,
+        style=configure_questionary_style()
+    ).unsafe_ask()
 
     if selected_files:
         files = [file.split()[0] for file in selected_files]
@@ -567,7 +612,6 @@ def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
             logger.error(f"Failed to {action} files: {files}")
         return result
     return f"No files selected to {action}."
-
 
 def stage_files(files: List[str]) -> str:
     """
@@ -581,7 +625,6 @@ def stage_files(files: List[str]) -> str:
     """
     return run_git_command(["git", "add"] + files)
 
-
 def unstage_files(files: List[str]) -> str:
     """
     Unstage the specified files.
@@ -594,36 +637,41 @@ def unstage_files(files: List[str]) -> str:
     """
     return run_git_command(["git", "reset"] + files)
 
-
 def handle_stage_files(unstaged_changes: List[Dict[str, Any]]) -> str:
     return handle_files(unstaged_changes, "stage")
-
 
 def handle_unstage_files(staged_changes: List[Dict[str, Any]]) -> str:
     return handle_files(staged_changes, "unstage")
 
-
 def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
     """
     Handle the generation of a commit message and committing the changes.
-
-    Args:
-        diff (str): The git diff of staged changes.
-        staged_changes (List[Dict[str, Any]]): List of staged changes.
     """
     if not diff:
         console.print("[bold red]No staged changes detected.[/bold red]")
         return
 
     display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
-
     commit_message = generate_commit_message(diff)
     if commit_message:
         printer.print_divider()
-        console.print(Panel(commit_message, title=f"Commit Generated by {MODEL if len(MODEL) < 30 else f'{MODEL[0:31]}...'}", border_style="dark_khaki", style="white on rgb(39,40,34)"))
+        console.print(
+            Padding(Panel(
+                Align.center(Padding(commit_message,(3,5))),
+                title=f"Commit Generated by {clean_model_name(MODEL) if len(MODEL) < 30 else f'{clean_model_name(MODEL)}...'}",
+                border_style="#ffffff",
+                style="#ffffff on #0D1116"
+            ),(3,8))
+        )
         printer.print_divider()
-        action = questionary.select("What would you like to do?", choices=["Commit", "Retry", "Cancel"]).ask()
+
+        action = questionary.select(
+            "What would you like to do?",
+            choices=["Commit", "Retry", "Cancel"],
+            style=configure_questionary_style()
+        ).ask()
         printer.print_divider()
+
         if action == "Commit":
             commit_status = run_git_command(["git", "commit", "-m", commit_message])
             if "Success" in commit_status:
@@ -640,13 +688,18 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         logger.error("Failed to generate a commit message.")
         console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
-
 def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subtitle: str, panel_width: int = 100, _panel_style: str = "bold white on rgb(39,40,34)") -> Panel:
     """
     Display the staged changes in a neat panel.
     """
     color = "red" if title == "Unstaged Changes" else "green"
-    table = Table(show_header=False, header_style=f"bold {color}", style=f"italic {color}", show_lines=False, box=None)
+    table = Table(
+        show_header=False,
+        header_style=f"bold {color}",
+        style=f"italic {color}",
+        show_lines=False,
+        box=None
+    )
     table.add_column("File", justify="left", style="bold white", no_wrap=True)
     table.add_column("Additions", justify="right", style="green")
     table.add_column("Deletions", justify="right", style="red")
@@ -655,7 +708,6 @@ def get_diff_summary_panel(file_changes: List[Dict[str, Any]], title: str, subti
         table.add_row(change["file"], f"+{change['additions']}", f"-{change['deletions']}")
 
     return table
-
 
 def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[Dict[str, Any]], panel_width: int = 100) -> Optional[Panel]:
     """
@@ -675,25 +727,31 @@ def display_diff_panel(filename: str, diff_lines: List[str], file_changes: List[
     else:
         diff_text = "\n".join(diff_lines)
 
-    # Determine the styling based on staged or unstaged
     is_staged = any(change["file"] == filename for change in file_changes)
-    border_style = "dark_khaki" if is_staged else "red"
+    border_style = "green" if is_staged else "bright_red"  # [UI Enhancement]
     title = f"[bold blue]{filename}[/bold blue] [{'Staged' if is_staged else 'Unstaged'}]"
 
-    # Create syntax-highlighted diff
-    syntax = Syntax(diff_text, "diff", theme="monokai", line_numbers=True)
+    # [UI Enhancement] Use a different syntax theme that is colorblind-friendly
+    syntax = Syntax(diff_text, "diff", theme="github-dark", line_numbers=True)
 
-    # Extract additions and deletions
     changes = next((change for change in file_changes if change["file"] == filename), {})
     additions = changes.get("additions", 0)
     deletions = changes.get("deletions", 0)
     footer = f"[bold green]+{additions}[/], [bold red]-{deletions}[/]"
 
-    # Create the panel
-    panel = Padding(Panel(Align.center(syntax), title=title, border_style="", style="", padding=(1, 2), subtitle=footer, width=panel_width), (5, 5))
-
+    panel = Padding(
+        Panel(
+            Align.center(syntax),
+            title=title,
+            border_style="#0D1116",
+            style="",
+            padding=(1, 2),
+            subtitle=footer,
+            width=panel_width,
+        ),
+        (1, 2)
+    )
     return Align.center(panel)
-
 
 def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], subtitle: str, panel_width: int = 100):
     """
@@ -734,38 +792,24 @@ def display_file_diffs(diff: str, staged_file_changes: List[Dict[str, Any]], sub
     else:
         console.print("[bold yellow]No diffs to display.[/bold yellow]")
 
-
 def configure_questionary_style():
     """
     Configure the style for questionary prompts.
-
-    Returns:
-        questionary.Style: The configured style.
     """
-    return questionary.Style(
-        [
-            ("qmark", f'fg:{THEME["accent"]} bold'),
-            ("question", f'fg:{THEME["primary"]} bold'),
-            ("answer", f'fg:{THEME["success"]} bold'),
-            ("pointer", f'fg:{THEME["accent"]} bold'),
-            ("highlighted", f'fg:{THEME["accent"]} bold'),
-            ("selected", f'fg:{THEME["success"]} bold'),
-            ("separator", f'fg:{THEME["secondary"]}'),
-            ("instruction", f'fg:{THEME["text"]}'),
-        ]
-    )
-
+    return questionary.Style([
+        ("qmark", f'fg:{THEME["accent"]} bold'),
+        ("question", f'fg:{THEME["primary"]} bold'),
+        ("answer", f'fg:{THEME["success"]} bold'),
+        ("pointer", f'fg:{THEME["accent"]} bold'),
+        ("highlighted", f'fg:{THEME["accent"]} bold'),
+        ("selected", f'fg:{THEME["secondary"]} bold'),
+        ("separator", f'fg:{THEME["secondary"]}'),
+        ("instruction", f'fg:{THEME["text"]}'),
+    ])
 
 def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Table:
     """
     Create a table summarizing file changes.
-
-    Args:
-        file_changes (List[Dict[str, Any]]): List of file changes.
-        color (str): Color for the table.
-
-    Returns:
-        Table: A styled table summarizing the file changes.
     """
     table = Table(show_header=False, show_lines=True, box=None, padding=(0, 0))
     table.add_column("File", justify="left", style="bold white", no_wrap=True)
@@ -779,12 +823,15 @@ def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str) -> Ta
         display_file_name = change["file"]
         if len(display_file_name) > max_file_name_len:
             display_file_name = f"{display_file_name[0:max_file_name_len]}..."
-        table.add_row(Padding(change["file"], (0, 2)), Padding(f"+{str(change['additions'])}", (0, 2)), Padding(f"-{str(change['deletions'])}", (0, 2)))
+        table.add_row(
+            Padding(change["file"], (0, 2)),
+            Padding(f"+{str(change['additions'])}", (0, 2)),
+            Padding(f"-{str(change['deletions'])}", (0, 2))
+        )
         total_additions += change["additions"]
         total_deletions += change["deletions"]
 
     return table
-
 
 def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[Dict[str, Any]], staged: bool = True, unstaged: bool = False):
     """
@@ -800,29 +847,37 @@ def display_status(unstaged_changes: List[Dict[str, Any]], staged_changes: List[
 
     if unstaged:
         unstaged_table = get_diff_summary_table(unstaged_changes, "red")
-        unstaged_panel = Panel(Padding(unstaged_table, (1, 0)), title_align="left", title="[bold white on red]Unstaged Changes[/]", border_style="red", width=50, expand=True)
+        unstaged_panel = Panel(
+            Padding(unstaged_table, (1, 0)),
+            title_align="left",
+            title="[bold white on red]Unstaged Changes[/]",
+            border_style="red",
+            width=50,
+            expand=True
+        )
         console.print(unstaged_panel)
 
     if staged:
         staged_table = get_diff_summary_table(staged_changes, "green")
-        staged_panel = Panel(Padding(staged_table, (1, 0)), title_align="left", title="[bold black on green]Staged Changes[/]", border_style="green", width=50, expand=True)
+        staged_panel = Panel(
+            Padding(staged_table, (1, 0)),
+            title_align="left",
+            title="[bold black on green]Staged Changes[/]",
+            border_style="green",
+            width=50,
+            expand=True
+        )
         console.print(staged_panel)
-
 
 def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Get the status of unstaged and staged changes and return the diffs and changes.
-
-    Returns:
-        Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]: The diffs and changes.
     """
     diff = get_git_diff(staged=True)
     unstaged_diff = get_git_diff(staged=False)
     staged_changes = parse_diff(diff)
     unstaged_changes = parse_diff(unstaged_diff)
-
     return diff, unstaged_diff, staged_changes, unstaged_changes
-
 
 def get_tracked_files() -> List[str]:
     """
@@ -834,60 +889,49 @@ def get_tracked_files() -> List[str]:
     result = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
     return result.stdout.splitlines()
 
-
 def get_and_display_status():
     diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
     display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
+def clean_model_name(model_name):
+    model_name = model_name.replace("local|","").replace("|127.0.0.1|o","").replace("local","")
+    return model_name
 
 def select_model():
     history_dir = ".C0MMIT"
 
-    # Check if .history exists and is a file
     if os.path.exists(history_dir) and not os.path.isdir(history_dir):
         raise FileExistsError(f"A file named '{history_dir}' already exists. Please remove or rename it.")
 
-    # Ensure the .history directory exists
     os.makedirs(history_dir, exist_ok=True)
-
-    # Use a valid file path for FileHistory
     history_file = os.path.join(history_dir, "model_selection")
 
     global MODEL
     MODEL = questionary.text("Select a model:\n", history=FileHistory(history_file)).ask()
     return MODEL
 
-
 def reset_console():
     console.clear()
     print("\n" * 25)
 
-
 def handle_ignore_files():
     """
     Handle the ignoring of files by appending selected files or custom patterns to .gitignore.
-    Ensures that existing .gitignore entries outside the managed section are preserved.
     """
     ignored_files = load_gitignore()
     all_files = get_tracked_files()
     choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
 
-    # Prompt user to select files to ignore or enter custom patterns
     action = questionary.select(
         "Would you like to select files to ignore or enter custom patterns?",
         choices=["Select files", "Enter custom patterns"]
     ).unsafe_ask()
 
     if action == "Select files":
-        selected_files = questionary.checkbox(
-            "Select files to ignore:",
-            choices=choices
-        ).unsafe_ask()
+        selected_files = questionary.checkbox("Select files to ignore:", choices=choices).unsafe_ask()
     else:
-        custom_patterns = questionary.text(
-            "Enter custom patterns to ignore (comma-separated):"
-        ).unsafe_ask()
+        custom_patterns = questionary.text("Enter custom patterns to ignore (comma-separated):").unsafe_ask()
         selected_files = [pattern.strip() for pattern in custom_patterns.split(",")]
 
     if selected_files:
@@ -896,18 +940,13 @@ def handle_ignore_files():
     else:
         console.print("[bold yellow]No files or patterns selected to ignore.[/bold yellow]")
 
-
 def save_gitignore_section(ignored_files: List[str]):
     """
     Save the list of ignored files to a specific section in the .gitignore file.
-    This prevents overwriting the entire file and keeps managed entries separate.
-
-    Args:
-        ignored_files (List[str]): List of files to ignore.
     """
     gitignore_path = ".gitignore"
-    start_marker = "# >>> Managed by Git CLI Tool >>>\n"
-    end_marker = "# <<< Managed by Git CLI Tool <<<\n"
+    start_marker = "# >>> Managed by GitSmart >>>\n"
+    end_marker = "# <<< Managed by GitSmart <<<\n"
 
     managed_section = start_marker
     for file in ignored_files:
@@ -917,11 +956,7 @@ def save_gitignore_section(ignored_files: List[str]):
     if os.path.exists(gitignore_path):
         with open(gitignore_path, "r") as f:
             content = f.read()
-
-        # Remove existing managed section
-        content = re.sub(r"# >>> Managed by Git CLI Tool >>>\n.*?# <<< Managed by Git CLI Tool <<<\n", "", content, flags=re.DOTALL)
-
-        # Append the new managed section
+        content = re.sub(r"# >>> Managed by GitSmart >>>\n.*?# <<< Managed by GitSmart <<<\n", "", content, flags=re.DOTALL)
         content = content.strip() + "\n\n" + managed_section
     else:
         content = managed_section
@@ -929,18 +964,14 @@ def save_gitignore_section(ignored_files: List[str]):
     with open(gitignore_path, "w") as f:
         f.write(content)
 
-
 def load_gitignore() -> List[str]:
     """
     Load the current .gitignore file and return the list of ignored files
     managed by this tool.
-
-    Returns:
-        List[str]: List of ignored files.
     """
     gitignore_path = ".gitignore"
-    start_marker = "# >>> Managed by Git CLI Tool >>>"
-    end_marker = "# <<< Managed by Git CLI Tool <<<"
+    start_marker = "# >>> Managed by GitSmart >>>"
+    end_marker = "# <<< Managed by GitSmart <<<"
 
     if not os.path.exists(gitignore_path):
         return []
@@ -965,14 +996,9 @@ def load_gitignore() -> List[str]:
 
     return ignored_files
 
-
 def update_gitignore(selected_files: List[str]):
     """
     Update the .gitignore file by adding newly selected ignored files or patterns.
-    Maintains a managed section to prevent duplication.
-
-    Args:
-        selected_files (List[str]): List of files or patterns to ignore.
     """
     existing_ignored = set(load_gitignore())
     new_ignored = set(selected_files) - existing_ignored
@@ -984,13 +1010,9 @@ def update_gitignore(selected_files: List[str]):
     all_ignored = sorted(existing_ignored.union(new_ignored))
     save_gitignore_section(all_ignored)
 
-
 def get_repo_name() -> str:
     """
     Function to get the repository name.
-
-    Returns:
-        str: The repository name.
     """
     try:
         repo_path = subprocess.check_output(["git", "rev-parse", "--show-toplevel"], universal_newlines=True).strip()
@@ -999,13 +1021,9 @@ def get_repo_name() -> str:
     except subprocess.CalledProcessError:
         return "Unknown Repository"
 
-
 def get_git_remotes() -> Dict[str, str]:
     """
     Retrieve a dictionary of all configured git remotes and their URLs.
-
-    Returns:
-        Dict[str, str]: Dictionary of remote names and their URLs.
     """
     try:
         result = subprocess.run(["git", "remote", "-v"], stdout=subprocess.PIPE, check=True, text=True)
@@ -1024,17 +1042,9 @@ def get_git_remotes() -> Dict[str, str]:
         console.print(f"[bold red]Failed to retrieve git remotes: {e}[/bold red]")
         return {}
 
-
 def push_to_remote(remote: str, url: str) -> str:
     """
     Push to a specific remote repository.
-
-    Args:
-        remote: The name of the remote.
-        url: The URL of the remote.
-
-    Returns:
-        A status message indicating success or failure.
     """
     try:
         logger.debug(f"Pushing to remote: {remote}")
@@ -1045,12 +1055,36 @@ def push_to_remote(remote: str, url: str) -> str:
         return f"Failed to push to {remote}: {e}"
 
 
+def run_git_command(command: List[str]) -> str:
+    """
+    Run a git command and return the result.
+
+    Args:
+        command (List[str]): The git command to run.
+
+    Returns:
+        str: Status message indicating the result of the command.
+    """
+    try:
+        subprocess.run(command, check=True)
+        return f"Success: {' '.join(command)}"
+    except subprocess.CalledProcessError as e:
+        error_message = f"Error: {' '.join(command)}. Error: {e}"
+        logger.error(error_message)
+        return error_message
+    except FileNotFoundError as e:
+        error_message = f"Error: Command not found. {' '.join(command)}. Error: {e}"
+        logger.error(error_message)
+        return error_message
+    except Exception as e:
+        error_message = f"Unexpected error: {' '.join(command)}. Error: {e}"
+        logger.error(error_message)
+        return error_message
+
+
 def handle_push_repo() -> List[str]:
     """
     Handle pushing commits to selected remote repositories.
-
-    Returns:
-        A list of status messages for each push operation.
     """
     remotes = get_git_remotes()
     if not remotes:
@@ -1083,59 +1117,40 @@ def handle_push_repo() -> List[str]:
     status_messages = []
     for remote in selected_remotes:
         status_message = push_to_remote(remote, remotes[remote])
-        console.print(f"[bold green]{status_message}[/bold green]" if "Successfully" in status_message else f"[bold red]{status_message}[/bold red]")
+        if "Successfully" in status_message:
+            console.print(f"[bold green]{status_message}[/bold green]")
+        else:
+            console.print(f"[bold red]{status_message}[/bold red]")
         status_messages.append(status_message)
 
     return status_messages
 
-
 def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: List[Dict[str, Any]]) -> Tuple[str, str, List[str]]:
     """
     Determine the appropriate menu title and options based on the current repository state.
-
-    Args:
-        staged_changes (List[Dict[str, Any]]): List of staged changes.
-        unstaged_changes (List[Dict[str, Any]]): List of unstaged changes.
-
-    Returns:
-        Tuple[str, str, List[str]]: A tuple containing the menu title, repository status, and the list of menu options.
     """
     num_staged_files = len(staged_changes)
     base_choices = ["Ignore Files", "View Commit History", "Push Repo", "Summarize Commits", "Exit"]
     choices = []
     title = "Select an action:"
 
-    # Default status: All changes up to date
-    repo_status = "[green]✔[/] [bold black on green] All changes are up to date[/]"
-
+    repo_status = "[green]✔[/] [bold black on green] All changes are up to date[/]\n"
     if staged_changes and unstaged_changes:
-        # Both staged and unstaged changes detected
-        repo_status = "[red]⚠[/] [bold white on red] Staged and unstaged changes detected[/]"
+        repo_status = "[#FFF781]⚠[/] [bold black on yellow] Staged and unstaged changes detected[/]\n"
         choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Stage Files", "Unstage Files", "Review Changes", "Select Model"]
     elif staged_changes:
-        # Only staged changes detected
-        repo_status = "[blue]➤[/] [bold white on blue] Staged changes detected[/]"
+        repo_status = "[blue]➤[/] [bold white on blue] Staged changes detected[/]\n"
         choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Unstage Files", "Review Changes", "Select Model"]
     elif unstaged_changes:
-        # Only unstaged changes detected
-        repo_status = "[yellow]✗[/] [bold black on yellow] Unstaged changes detected[/]"
+        repo_status = "[yellow]✗[/] [italic #FFF781] Unstaged changes detected[/]\n"
         choices = ["Stage Files", "Review Changes", "Select Model"]
 
-    # Append the base choices to the specific choices
     choices.extend(base_choices)
-
     return title, repo_status, choices
-
 
 def parse_commit_log(log_output: str) -> List[Dict[str, Any]]:
     """
     Parse the git log output into a list of commit details.
-
-    Args:
-        log_output (str): The git log output.
-
-    Returns:
-        List[Dict[str, Any]]: List of parsed commit details.
     """
     commits = [commit for commit in log_output.split("\n\n") if commit.strip()]
     parsed_commits = []
@@ -1145,7 +1160,6 @@ def parse_commit_log(log_output: str) -> List[Dict[str, Any]]:
         if len(lines) < 2:
             continue
 
-        # Ensure the first line contains both a commit hash and a commit message
         if " " in lines[0]:
             commit_hash, commit_message = lines[0].split(" ", 1)
             full_message = "\n".join(lines[1:]).strip()
@@ -1159,16 +1173,9 @@ def parse_commit_log(log_output: str) -> List[Dict[str, Any]]:
 
     return parsed_commits
 
-
 def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
     """
     Display the commit summary with the specified number of commits.
-
-    Args:
-        num_commits (int): Number of commits to display.
-
-    Returns:
-        List[Dict[str, Any]]: List of parsed commit details.
     """
     try:
         num_commits_arg = ["-n", str(num_commits)] if num_commits > 0 else []
@@ -1176,7 +1183,6 @@ def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
         log_output = result.stdout.decode("utf-8")
         parsed_commits = parse_commit_log(log_output)
 
-        # Display the commit summary
         table = create_styled_table("Recent Commits", clean=True)
         table.add_column("Hash", style=f"bold {THEME['secondary']}")
         table.add_column("Message", style=THEME["text"])
@@ -1185,7 +1191,6 @@ def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
             table.add_row(commit["hash"], commit["message"])
 
         console.print(Panel(table, style="", border_style="black", padding=(1, 2)))
-
         return parsed_commits
 
     except subprocess.CalledProcessError as e:
@@ -1193,76 +1198,30 @@ def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
         console.print(f"[bold {THEME['error']}]Failed to get commit history: {e}[/bold {THEME['error']}]")
         return []
 
-
 def select_commit(commits: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
     Allow the user to select a commit from the summary.
-
-    Args:
-        commits (List[Dict[str, Any]]): List of parsed commit details.
-
-    Returns:
-        Optional[Dict[str, Any]]: The selected commit details or None if no selection is made.
     """
     choices = [questionary.Choice(f"{commit['hash']} {commit['message']}", value=commit) for commit in commits]
-
     selected_commit = questionary.select("Select a commit to view details:", choices=choices).unsafe_ask()
-
     return selected_commit
-
 
 def print_commit_details(commit: Dict[str, Any]):
     """
     Print the full details of the selected commit.
-
-    Args:
-        commit (Dict[str, Any]): The selected commit details.
     """
     commit_message_md = Markdown(commit['full_message'])
     console.print(Panel(commit_message_md, title=f"Commit {commit['hash']}", border_style="dark_khaki", style="white on rgb(39,40,34)"))
 
-
-
-
-def run_git_command(command: List[str]) -> str:
-    """
-    Run a git command and return the result.
-
-    Args:
-        command (List[str]): The git command to run.
-
-    Returns:
-        str: Status message indicating the result of the command.
-    """
-    try:
-        subprocess.run(command, check=True)
-        return f"Success: {' '.join(command)}"
-    except subprocess.CalledProcessError as e:
-        error_message = f"Error: {' '.join(command)}. Error: {e}"
-        logger.error(error_message)
-        return error_message
-    except FileNotFoundError as e:
-        error_message = f"Error: Command not found. {' '.join(command)}. Error: {e}"
-        logger.error(error_message)
-        return error_message
-    except Exception as e:
-        error_message = f"Unexpected error: {' '.join(command)}. Error: {e}"
-        logger.error(error_message)
-        return error_message
-
-
 def main(reload: bool = False):
     """
     Main function to generate and commit a message based on staged changes.
-
-    Args:
-        reload (bool): Whether to enable auto-reloading of repository status.
     """
     diff, unstaged_diff, staged_changes, unstaged_changes = None, None, None, None
-    console.print(Markdown("# Git CLI Tool"))
+    console.print(Markdown("# GitSmart"))
 
     questionary_style = configure_questionary_style()
-    repo_name = get_repo_name()  # Function to get the repository name
+    repo_name = get_repo_name()
 
     display_commit_summary(3)
     exit_prompted = 0
@@ -1273,13 +1232,13 @@ def main(reload: bool = False):
         diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
         while True:
             try:
-
                 total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
                 total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
 
                 console.print(f"\n\n[bold white on black]{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
                 title, repo_status, choices = get_menu_options(staged_changes, unstaged_changes)
                 console.print(repo_status)
+
                 action = questionary.select(
                     title,
                     choices=choices,
@@ -1295,13 +1254,11 @@ def main(reload: bool = False):
                     reset_console()
                     handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-
                 elif action == "Stage Files":
                     status_msg = handle_stage_files(unstaged_changes)
                     reset_console()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
-
                 elif action == "Unstage Files":
                     status_msg = handle_unstage_files(staged_changes)
                     reset_console()
@@ -1311,31 +1268,26 @@ def main(reload: bool = False):
                     handle_ignore_files()
                     reset_console()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-
                 elif action == "View Commit History":
                     reset_console()
                     commits = display_commit_summary(20)
                     selected_commit = select_commit(commits)
                     if selected_commit:
                         print_commit_details(selected_commit)
-
                 elif action == "Select Model":
                     reset_console()
                     select_model()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(f"Model selected: {MODEL}")
-
                 elif action == "Push Repo":
                     reset_console()
                     status_msg = handle_push_repo()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
-
                 elif action == "Summarize Commits":
                     reset_console()
                     summarize_selected_commits()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-
                 elif action == "Exit":
                     reset_console()
                     console.print("[bold red]Goodbye...[/bold red]")
@@ -1352,7 +1304,7 @@ def main(reload: bool = False):
                     console.print(f"[bold black on red]Press Ctrl+C {3 - exit_prompted} more time(s) to exit.[/bold black on red]", justify="center")
 
     if reload:
-        refresh_interval = 5  # seconds
+        refresh_interval = 5
         console.print(f"[bold yellow]Auto-reload is enabled. Repository status will refresh every {refresh_interval} seconds.[/bold yellow]")
 
         def auto_refresh():
@@ -1361,7 +1313,6 @@ def main(reload: bool = False):
                 time.sleep(refresh_interval)
                 printer.print_divider("Auto Refresh")
                 diff, unstaged_diff, staged_changes, unstaged_changes = get_status()
-
                 display_status(unstaged_changes, staged_changes, staged=bool(staged_changes), unstaged=bool(unstaged_changes))
                 total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
                 total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
@@ -1374,12 +1325,9 @@ def main(reload: bool = False):
 
     loop()
 
-
 if __name__ == "__main__":
     import argparse
-
     parser = argparse.ArgumentParser(description="Automate git commit messages with enhanced features.")
     parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")
     args = parser.parse_args()
-
     main(reload=args.reload)
