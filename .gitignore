@@ -1,7 +1,11 @@
 *
 **
+
 !GitSmart
+!GitSmart/**
 !example.config.ini
 !README.md
 !setup.py
 !requirements.txt
+**/__pycache__/**
+**/.DS_Store
