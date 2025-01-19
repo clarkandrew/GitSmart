@@ -1,3 +1,5 @@
+# GitSmart/main.py
+
 import argparse
 import sys
 import time
@@ -5,27 +7,35 @@ import time
 from .config import logger, MODEL, DEBUG
 from .ui import console, printer
 from .cli_flow import (
-    get_and_display_status, handle_generate_commit, handle_review_changes,
-    display_commit_summary, select_commit, print_commit_details,
-    handle_stage_files, handle_unstage_files, handle_ignore_files,
-    handle_push_repo, summarize_selected_commits, select_model,
-    reset_console
+    get_and_display_status,
+    handle_generate_commit,
+    handle_review_changes,
+    display_commit_summary,
+    select_commit,
+    print_commit_details,
+    handle_stage_files,
+    handle_unstage_files,
+    handle_ignore_files,
+    handle_push_repo,
+    summarize_selected_commits,
+    select_model,
+    reset_console,
+    get_menu_options,
+    main_menu_prompt
 )
-from .git_utils import get_repo_name
 
 """
-Main entry point for the C0MIT application. Ties together
-the various modules and orchestrates the CLI loop.
+main.py
+
+- Orchestrates the main application loop
+- Always uses get_and_display_status() to show both staged/unstaged
+- Passes dynamic menu from get_menu_options() to main_menu_prompt
 """
 
 def main(reload: bool = False):
-    """
-    Main function to generate and commit a message based on staged changes.
-    Incorporates repeated status checks, menu selection, and user actions.
-    """
-    console.print("# GitSmart")
-    repo_name = get_repo_name()
+    console.print("[bold cyan]# GitSmart[/bold cyan]")
     display_commit_summary(3)
+
     exit_prompted = 0
 
     def loop():
@@ -34,21 +44,11 @@ def main(reload: bool = False):
 
         while True:
             try:
-                total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
-                total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
-                console.print(
-                    f"\n\n[bold white on black]{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]"
-                )
-
                 title, repo_status, choices = get_menu_options(staged_changes, unstaged_changes)
-                console.print(repo_status)
+                console.print(repo_status, justify="left")
 
-                import questionary
-                action = questionary.select(
-                    title,
-                    choices=choices,
-                    style=None  # or configure_questionary_style()
-                ).unsafe_ask()
+                # Present main menu with styling
+                action = main_menu_prompt(title, choices)
 
                 if action.startswith("Generate Commit for Staged Changes"):
                     reset_console()
@@ -88,9 +88,9 @@ def main(reload: bool = False):
 
                 elif action == "Select Model":
                     reset_console()
-                    MODEL = select_model()
+                    select_model()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-                    console.print(f"Model selected: {MODEL}")
+                    console.print(f"[bold green]Model selected:[/bold green] {MODEL}")
 
                 elif action == "Push Repo":
                     reset_console()
@@ -121,27 +121,21 @@ def main(reload: bool = False):
                         justify="center"
                     )
 
-    # Additional function from original code that decides menu options
-    from .cli_flow import get_menu_options
-
     if reload:
         refresh_interval = 5
         console.print(
             f"[bold yellow]Auto-reload is enabled. Repository status will refresh every {refresh_interval} seconds.[/bold yellow]"
         )
 
+        import threading
         def auto_refresh():
             while True:
                 console.print("[bold yellow]...[/bold yellow]")
                 time.sleep(refresh_interval)
                 printer.print_divider("Auto Refresh")
                 diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-                total_additions = sum(change["additions"] for change in staged_changes + unstaged_changes)
-                total_deletions = sum(change["deletions"] for change in staged_changes + unstaged_changes)
-                console.print(f"{repo_name} [green]+{total_additions}[/green], [red]-{total_deletions}[/]")
                 sys.stdout.flush()
 
-        import threading
         refresh_thread = threading.Thread(target=auto_refresh, daemon=True)
         refresh_thread.start()
 
@@ -149,8 +143,7 @@ def main(reload: bool = False):
 
 def entry_point():
     """
-    Entry point function for the GitSmart console script.
-    This function is referenced in the setup configuration to initiate the application.
+    Minimal wrapper for console_scripts entry point.
     """
     parser = argparse.ArgumentParser(description="Automate git commit messages with enhanced features.")
     parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")
@@ -158,4 +151,5 @@ def entry_point():
     main(reload=args.reload)
 
 if __name__ == "__main__":
+
     entry_point()

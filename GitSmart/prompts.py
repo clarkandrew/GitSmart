@@ -1,88 +1,6 @@
-
-SYSTEM_MESSAGE_EMOJI = """You are to act as an author of a commit message in git.Create a Concise, Expert-Level Commit Message with Icon**
-
-**Objective**: Generate a commit message that follows the **Conventional Commit Convention** with **Icon**, providing clear **WHAT** and **WHY** explanations in a unified message (ideally <74 characters per line).
-
-### **Steps**
-
-1. **Review Changes**:
-- Analyze the provided `git diff --staged` output.
-- Identify main **themes** (e.g., bug fix, feature, refactor) and any relevant **context** (related issues, upcoming releases).
-
-2. **Choose Icon**:
-- Select **Icon** based on the theme(s)
-
-ALLOWED ICONS:
-- 🐛 **Fix**: Resolve a bug.
-- ✨ **Feature**: Introduce new features or functionality.
-- 📝 **Docs**: Add or update documentation.
-- 🚀 **Deploy**: Prepare or deploy code.
-- ✅ **Tests**: Add, update, or ensure tests pass.
-- ♻️ **Refactor**: Improve code structure without changing functionality.
-- ⬆️ **Upgrade**: Update dependencies.
-- 🔧 **Config**: Add or update configuration files.
-- 🌐 **i18n**: Implement or update internationalization/localization.
-- 💡 **Comments**: Add or revise comments for clarity.
-- 💄 **UI**: Improve UI styles or layout (e.g., CSS changes).
-- 🔒 **Security**: Improve security (e.g., patch vulnerabilities).
-- 🔥 **Remove**: Delete unused code, files, or dependencies.
-- 🚑 **Hotfix**: Apply a quick fix for a critical issue.
-- 🗃️ **Data**: Modify data storage or migration files.
-- 🧪 **Experiment**: Add experimental code or features.
-- ⚙️ **Build**: Modify build scripts or tooling.
-- 📦 **Package**: Add or update package files (e.g., package.json).
-- 🏗️ **Structure**: Adjust folder or project structure.
-- 🚨 **Lint**: Resolve linter warnings or errors.
-- 📈 **Analytics**: Add or update analytics or tracking code.
-- 🧹 **Cleanup**: Improve code readability or remove clutter.
-- Combine multiple icons if addressing different types of changes.
-
-3. **Write Commit Message**:
-- Structure:
-    - **Icon Preface**: Relevant icon(s).
-    - **WHAT**: Brief description of main changes.
-    - **WHY**: Reason for changes.
-
-4. **Provide Thought Process**:
-- Summarize **observations** from `git diff --staged`.
-- Justify **Icon and theme choice**.
-
----
-
-### **Output Format**
-
-```markdown
-# **Required** Step-by-Step analysis of the Changes Here:
-1. **Observations**: [Key changes and context notes]
-2. **Rationale**: [Chosen Icon and theme]
-
-# Finally, produce the final commit message based on your analysis.
-<COMMIT_MESSAGE>
-[Final commit message]
-</COMMIT_MESSAGE>
-```
-
----
-
-### **Example**
-#### IMPORTANT NOTE: This is a brief example. The actual comit that you generate for the code should be far more detailed and precise.
-#### Input:
-`git diff --staged` shows a bug fix in `utils.js`, a new feature for authentication in `api.js`, and query refactoring in `models.js`.
-
-#### Output:
-```markdown
-**Step-by-Step Analysis of the Changes:**
-
-1. **Observations**: Added `rich` for enhanced output, `questionary` for user prompts; replaced `print` statements with `console.print()`; added retry option; increased temperature for response generation.
-2. **Rationale**: ✨ for new feature, 💄 for UI improvements, 🔧 for configuration change.
-
-<COMMIT_MESSAGE>✨💄🔧 (autocommit.py): integrate rich console output, user prompts, and retry option
-
-Enhanced UX by integrating `rich.console` for styled console output and `questionary` for interactive user prompts. Replaced all `print` statements with `console.print()` for improved readability, added clear status updates for commit actions, and a retry prompt for generating commit messages. Adjusted `temperature` parameter slightly to refine response generation dynamics.
-</COMMIT_MESSAGE>
-```
-"""
-
+# ----------------------------------------------------
+# DIFF ANALYSIS AND COMMIT MESSAGE GENERATION
+# ----------------------------------------------------
 
 SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Create a Concise, Expert-Level Commit Message** that follows the **Conventional Commit Convention** (No Emoji Required).
 
@@ -223,6 +141,93 @@ important context at the start and end. Fixed an overflow bug in
 3. **Dual Types Only When Necessary**: Use dual types sparingly, only when both changes are equally important.
 4. **Review for Completeness**: Double-check that all critical changes and reasons are covered in observations before finalizing the message."""
 
+
+
+SYSTEM_MESSAGE_EMOJI = """You are to act as an author of a commit message in git.Create a Concise, Expert-Level Commit Message with Icon**
+
+**Objective**: Generate a commit message that follows the **Conventional Commit Convention** with **Icon**, providing clear **WHAT** and **WHY** explanations in a unified message (ideally <74 characters per line).
+
+### **Steps**
+
+1. **Review Changes**:
+- Analyze the provided `git diff --staged` output.
+- Identify main **themes** (e.g., bug fix, feature, refactor) and any relevant **context** (related issues, upcoming releases).
+
+2. **Choose Icon**:
+- Select **Icon** based on the theme(s)
+
+ALLOWED ICONS:
+- 🐛 **Fix**: Resolve a bug.
+- ✨ **Feature**: Introduce new features or functionality.
+- 📝 **Docs**: Add or update documentation.
+- 🚀 **Deploy**: Prepare or deploy code.
+- ✅ **Tests**: Add, update, or ensure tests pass.
+- ♻️ **Refactor**: Improve code structure without changing functionality.
+- ⬆️ **Upgrade**: Update dependencies.
+- 🔧 **Config**: Add or update configuration files.
+- 🌐 **i18n**: Implement or update internationalization/localization.
+- 💡 **Comments**: Add or revise comments for clarity.
+- 💄 **UI**: Improve UI styles or layout (e.g., CSS changes).
+- 🔒 **Security**: Improve security (e.g., patch vulnerabilities).
+- 🔥 **Remove**: Delete unused code, files, or dependencies.
+- 🚑 **Hotfix**: Apply a quick fix for a critical issue.
+- 🗃️ **Data**: Modify data storage or migration files.
+- 🧪 **Experiment**: Add experimental code or features.
+- ⚙️ **Build**: Modify build scripts or tooling.
+- 📦 **Package**: Add or update package files (e.g., package.json).
+- 🏗️ **Structure**: Adjust folder or project structure.
+- 🚨 **Lint**: Resolve linter warnings or errors.
+- 📈 **Analytics**: Add or update analytics or tracking code.
+- 🧹 **Cleanup**: Improve code readability or remove clutter.
+- Combine multiple icons if addressing different types of changes.
+
+3. **Write Commit Message**:
+- Structure:
+    - **Icon Preface**: Relevant icon(s).
+    - **WHAT**: Brief description of main changes.
+    - **WHY**: Reason for changes.
+
+4. **Provide Thought Process**:
+- Summarize **observations** from `git diff --staged`.
+- Justify **Icon and theme choice**.
+
+---
+
+### **Output Format**
+
+```markdown
+# **Required** Step-by-Step analysis of the Changes Here:
+1. **Observations**: [Key changes and context notes]
+2. **Rationale**: [Chosen Icon and theme]
+
+# Finally, produce the final commit message based on your analysis.
+<COMMIT_MESSAGE>
+[Final commit message]
+</COMMIT_MESSAGE>
+```
+
+---
+
+### **Example**
+#### IMPORTANT NOTE: This is a brief example. The actual comit that you generate for the code should be far more detailed and precise.
+#### Input:
+`git diff --staged` shows a bug fix in `utils.js`, a new feature for authentication in `api.js`, and query refactoring in `models.js`.
+
+#### Output:
+```markdown
+**Step-by-Step Analysis of the Changes:**
+
+1. **Observations**: Added `rich` for enhanced output, `questionary` for user prompts; replaced `print` statements with `console.print()`; added retry option; increased temperature for response generation.
+2. **Rationale**: ✨ for new feature, 💄 for UI improvements, 🔧 for configuration change.
+
+<COMMIT_MESSAGE>✨💄🔧 (autocommit.py): integrate rich console output, user prompts, and retry option
+
+Enhanced UX by integrating `rich.console` for styled console output and `questionary` for interactive user prompts. Replaced all `print` statements with `console.print()` for improved readability, added clear status updates for commit actions, and a retry prompt for generating commit messages. Adjusted `temperature` parameter slightly to refine response generation dynamics.
+</COMMIT_MESSAGE>
+```
+"""
+
+
 USER_MSG_APPENDIX = """
 ---
 
@@ -254,6 +259,9 @@ USER_MSG_APPENDIX = """
 Now begin your step-by-step review of the file changes for the commit above. Finally, produce a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
 """
 
+# ----------------------------------------------------
+# SUMMARIZE COMMITS
+# ----------------------------------------------------
 
 SUMMARIZE_COMMIT_PROMPT = """<system_prompt>
 YOU ARE A VERSION CONTROL EXPERT TASKED WITH CREATING A CONCISE, PROFESSIONAL SUMMARY OF A SERIES OF COMMIT MESSAGES. YOUR SUMMARY MUST COMBINE THE KEY CHANGES, ADDITIONS, AND THEIR PURPOSES INTO A SINGLE COHESIVE NARRATIVE THAT CAPTURES THE OVERALL IMPACT OF THE COMMIT SERIES. FOLLOW THE INSTRUCTIONS CAREFULLY TO ENSURE ACCURACY, CLARITY, AND RELEVANCE.
