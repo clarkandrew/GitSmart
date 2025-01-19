@@ -12,7 +12,7 @@ from .config import (
 )
 from .git_utils import parse_diff
 from .ui import printer
-from .prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX, SYSTEM_MESSAGE_EMOJI, SUMMARIZE_COMMIT_PROMPT
+from .prompts import SYSTEM_MESSAGE, USER_MSG_APPENDIX, SYSTEM_MESSAGE_EMOJI, SUMMARIZE_COMMIT_PROMPT, USER_MSG_APPENDIX_EMOJI
 
 # If an actual "count_tokens_in_string" is needed, import from a local module:
 from count_tokens import count_tokens_in_string
@@ -73,7 +73,7 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
         )
     return truncated_diff
 
-def generate_commit_message(diff: str) -> str:
+def generate_commit_message(MODEL: str, diff: str) -> str:
     """
     Generate a commit message using an external service.
     Retries until a properly formatted commit message is received or max retries is reached.
@@ -85,7 +85,7 @@ def generate_commit_message(diff: str) -> str:
     headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
     messages = [
         {"role": "system", "content": INSTRUCT_PROMPT},
-        {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF:\n" + diff + USER_MSG_APPENDIX},
+        {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF:\n" + diff + (USER_MSG_APPENDIX if not USE_EMOJIS else USER_MSG_APPENDIX_EMOJI)},
     ]
     body = {
         "model": MODEL,
@@ -176,13 +176,21 @@ def generate_commit_message(diff: str) -> str:
                     return commit_message_text
                 else:
                     logger.error("Could not extract COMMIT_MESSAGE tags. Retrying...")
-                    console.print("[bold red]Commit message format incorrect. Retrying...[/bold red]")
+                    console.print(f"[bold red]Commit message format incorrect.\n\n```\n\n{commit_message}\n\n```\n\nRetrying...[/bold red]")
                     retry_count += 1
                     time.sleep(2)
         except Exception as e:
             logger.error(f"Failed to generate commit message: {e}")
             console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
-            return ""
+            retry_count += 1
+            if retry_count < max_retries:
+                retry_prompt = questionary.confirm(
+                    "Failed to generate commit message. Would you like to retry?",
+                    style=configure_questionary_style()
+                ).ask()
+                if not retry_prompt:
+                    console.print("[bold red]Commit generation aborted by user.[/bold red]")
+                    return ""
 
     console.print("[bold red]Failed to generate a properly formatted commit message after multiple attempts.[/bold red]")
     return ""
@@ -227,7 +235,7 @@ def generate_summary(text: str) -> Optional[str]:
                             summary += delta_content
                             if not first_chunk_received:
                                 first_chunk_received = True
-                            console.print(delta_content, end="")
+
                             status.update(summary)
                         except json.JSONDecodeError as e:
                             logger.error(f"Failed to decode JSON chunk: {e}")

@@ -33,6 +33,7 @@ main.py
 """
 
 def main(reload: bool = False):
+
     console.print("[bold cyan]# GitSmart[/bold cyan]")
     display_commit_summary(3)
 
@@ -41,7 +42,8 @@ def main(reload: bool = False):
     def loop():
         nonlocal exit_prompted
         diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-
+        global MODEL
+        selected_model = MODEL
         while True:
             try:
                 title, repo_status, choices = get_menu_options(staged_changes, unstaged_changes)
@@ -52,7 +54,7 @@ def main(reload: bool = False):
 
                 if action.startswith("Generate Commit for Staged Changes"):
                     reset_console()
-                    status_msg = handle_generate_commit(diff, staged_changes)
+                    status_msg = handle_generate_commit(MODEL, diff, staged_changes)
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     if status_msg:
                         console.print(status_msg)
@@ -88,7 +90,7 @@ def main(reload: bool = False):
 
                 elif action == "Select Model":
                     reset_console()
-                    select_model()
+                    MODEL = select_model()
                     diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(f"[bold green]Model selected:[/bold green] {MODEL}")
 

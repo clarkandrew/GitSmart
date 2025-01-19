@@ -8,7 +8,7 @@ import threading
 import questionary
 from typing import List, Dict, Any, Tuple, Optional
 
-from .config import logger, MODEL
+from .config import logger
 from .ui import console, printer, create_styled_table, configure_questionary_style
 from .git_utils import (
     parse_diff,
@@ -256,7 +256,7 @@ def display_file_diffs(
     else:
         console.print("[bold yellow]No diffs to display.[/bold yellow]")
 
-def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
+def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str, Any]]):
     """
     Generate commit message with AI, let the user commit or edit the result.
     """
@@ -269,7 +269,7 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
         return
 
     display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
-    commit_message = generate_commit_message(diff)
+    commit_message = generate_commit_message(MODEL, diff)
 
     if commit_message:
         printer.print_divider()
@@ -327,14 +327,14 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
                 return commit_status
             elif confirm_edit == "Retry":
                 logger.info("Retrying commit message generation.")
-                return handle_generate_commit(diff, staged_changes)
+                return handle_generate_commit(MODEL, diff, staged_changes)
             else:
                 logger.info("Commit aborted by user.")
                 console.print("[bold yellow]Commit aborted by user.[/bold yellow]")
 
         elif action == "Retry":
             logger.info("Retrying commit message generation.")
-            return handle_generate_commit(diff, staged_changes)
+            return handle_generate_commit(MODEL, diff, staged_changes)
 
         else:
             logger.info("Commit aborted by user.")
