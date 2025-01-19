@@ -52,11 +52,11 @@ ALLOWED ICONS:
 ### **Output Format**
 
 ```markdown
-**Step-by-Step Thinking:**
-
+# **Required** Step-by-Step analysis of the Changes Here:
 1. **Observations**: [Key changes and context notes]
 2. **Rationale**: [Chosen Icon and theme]
 
+# Finally, produce the final commit message based on your analysis.
 <COMMIT_MESSAGE>
 [Final commit message]
 </COMMIT_MESSAGE>
@@ -71,7 +71,7 @@ ALLOWED ICONS:
 
 #### Output:
 ```markdown
-**Step-by-Step Thinking:**
+**Step-by-Step Analysis of the Changes:**
 
 1. **Observations**: Added `rich` for enhanced output, `questionary` for user prompts; replaced `print` statements with `console.print()`; added retry option; increased temperature for response generation.
 2. **Rationale**: ✨ for new feature, 💄 for UI improvements, 🔧 for configuration change.
@@ -143,11 +143,11 @@ SYSTEM_MESSAGE = """You are to act as an author of a commit message in Git. **Cr
 ### Output Format
 
 ```markdown
-**Step-by-Step Thinking:**
+# **Required** Step-by-Step analysis of the Changes Here:
+1. **Observations**: [Key changes and context notes]
+2. **Rationale**: [Chosen Icon and theme]
 
-1. **Observations**: [Summarize key changes and purpose]
-2. **Rationale**: [Explain chosen commit type(s) and reasoning]
-
+# Finally, produce the final commit message based on your analysis.
 <COMMIT_MESSAGE>
 [Final commit message with file scope]
 </COMMIT_MESSAGE>
@@ -223,14 +223,15 @@ important context at the start and end. Fixed an overflow bug in
 3. **Dual Types Only When Necessary**: Use dual types sparingly, only when both changes are equally important.
 4. **Review for Completeness**: Double-check that all critical changes and reasons are covered in observations before finalizing the message."""
 
-USER_MSG_APPENDIX = """---
-**COMMIT MESSAGE GUIDELINES**
+USER_MSG_APPENDIX = """
+---
 
-1. **Comprehensive Review of Changes**:
+## **IMPORTANT** COMMIT MESSAGE GUIDELINES:
+1. **Comprehensive Analysis of All Changes**:
    - Carefully review the `git diff` above to identify **all changes**.
    - Think step-by-step about each change to fully understand its purpose and impact.
 
-2. **Identify WHAT and WHY**:
+2. **Identify the WHAT, WHY, and WHERE.**:
    - Clarify **WHAT** was changed and **WHY** each change was necessary.
    - Formulate these points clearly before drafting the commit message.
 
@@ -238,84 +239,82 @@ USER_MSG_APPENDIX = """---
    - Choose the most relevant commit type(s) (e.g., `feat:`, `fix:`, or `feat, fix:`).
    - If multiple types apply, select the type that best reflects the main purpose, or use a dual type format if both are essential.
 
-4. **Compose an Exhaustive Commit Message**:
+4. **FINALLY, Compose an Exhaustive Commit Message**:
    - First line: Start with the chosen commit type(s) and a concise summary.
    - Follow with detailed explanation lines as needed to ensure the message is **absolutely exhaustive**.
    - Use present tense and imperative mood (e.g., "Add helper function" not "Added helper function").
 
-# INSTRUCTIONS
-1. **Review the diff carefully** to ensure you identify **all changes**.
-2. Think step-by-step to understand **WHAT** and **WHY** for each change, then choose the commit type(s).
-3. Write a complete commit message that captures **all details** of the changes. Place the final message between `<COMMIT_MESSAGE>` tags.
+## INSTRUCTIONS
+1. TASK 1: **Review the diff carefully** to ensure you identify **all changes**.
+2. TASK 2: Think step-by-step to understand **WHAT** and **WHY** for each change, then choose the commit type(s).
+3. TASK 3: Write a complete commit message that captures **all details** of the changes. Place the final message between `<COMMIT_MESSAGE>` tags.
 
-Now begin your step-by-step review of the changes in this commit. Then, provide a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
+## CRITICAL REMINDER: NEVER PRODUCE THE FINAL COMMIT MESSAGE BEFORE PROVIDING AN EXAUHSTIVE ANALYSIS OF ALL THE CHANGES.
+
+Now begin your step-by-step review of the file changes for the commit above. Finally, produce a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
 """
 
 
 SUMMARIZE_COMMIT_PROMPT = """<system_prompt>
-YOU ARE A VERSION CONTROL EXPERT TASKED WITH CREATING A DETAILED AND CONCISE SUMMARY OF A SERIES OF COMMIT
-MESSAGES. THE SUMMARY SHOULD INCLUDE THE KEY CHANGES, ADDITIONS,
-AND THEIR PURPOSES, MAINTAINING A BALANCE BETWEEN DETAIL AND BREVITY.
+YOU ARE A VERSION CONTROL EXPERT TASKED WITH CREATING A CONCISE, PROFESSIONAL SUMMARY OF A SERIES OF COMMIT MESSAGES. YOUR SUMMARY MUST COMBINE THE KEY CHANGES, ADDITIONS, AND THEIR PURPOSES INTO A SINGLE COHESIVE NARRATIVE THAT CAPTURES THE OVERALL IMPACT OF THE COMMIT SERIES. FOLLOW THE INSTRUCTIONS CAREFULLY TO ENSURE ACCURACY, CLARITY, AND RELEVANCE.
 
 ### INSTRUCTIONS ###
-1. **Summary Content**:
-   - **Key Changes/Additions**: Identify the major changes or features introduced in
-each commit. Focus on the core changes rather than minor adjustments.
-   - **Purpose**: Explain why these changes were made (e.g., bug fix, feature addition, refactor).
-Be specific about the motivation behind the changes.
-   - **Overall Impact**: Clarify how each change contributes to the broader project goals,
-such as improving functionality, performance, or
-security.
+1. **Review and Analyze Commit Messages**:
+   - Carefully review all commit messages to identify:
+     - **Common Themes**: Look for recurring objectives or areas of impact (e.g., bug fixes, performance improvements).
+     - **Key Changes**: Highlight the most significant changes or additions across the commit series.
+     - **Purpose**: Understand the reasons behind these changes (e.g., resolving a critical issue, enhancing functionality).
+   - Note any **dependencies or relationships** between commits (e.g., feature builds on a prior change).
 
-2. **Clarity and Precision**:
-   - Strive for **clarity** and **precision** in your summary. Avoid jargon or
-overly technical details unless they are necessary for understanding the change.
-   - The summary should be easy to understand even for someone unfamiliar with the project or commit history. If using technical terms,
-ensure they are widely known or briefly explained.
+2. **Synthesize Themes**:
+   - **Group Similar Changes**: Combine related commits into unified themes (e.g., multiple commits addressing security improvements).
+   - **Address Unrelated or Conflicting Commits**: If commits are unrelated or conflict with each other:
+     - Acknowledge the divergence or conflicts briefly.
+     - Emphasize the overall intent or dominant impact of the series.
+   - **Incorporate Minor Updates**: Aggregate minor commits (e.g., typo fixes, small refactors) into a single summary line where relevant.
 
-3. **Summary Structure**:
-   - Organize the summary using either **bullet points** or **short paragraphs**, based on which
-format provides the clearest explanation.
-   - The summary should be logically structured, with each
-commit’s change and purpose presented clearly.
+3. **Summary Content**:
+   - Your summary must include:
+     - **Primary Changes**: Describe the most important updates across the commit series.
+     - **Purpose**: Explain the overall intent of these changes (e.g., improving usability, resolving bugs, future-proofing).
+     - **Overall Impact**: Highlight the broader contribution of the commits to project goals (e.g., increased performance, enhanced security, better maintainability).
 
-4. **Balance Between Detail and Brevity**:
-   - Each commit summary should consist of **1-2 sentences** outlining the key change and its
-purpose. Avoid excessive elaboration.
-   - For more complex commits, provide up to **3
-additional sentences** of context, but remain concise.
+4. **Clarity and Precision**:
+   - Use clear, concise language. Avoid jargon unless it is widely understood or essential to the summary.
+   - Ensure the summary is understandable to a broad technical audience, including developers, managers, and external reviewers.
 
-5. **Length Constraints**:
-   - The entire summary should not exceed **300 words**. If summarizing multiple commits, aim to
-keep each commit description to **1-2 sentences**.
-   - If the summary involves a series of minor commits (e.g., typo fixes), condense them into a single sentence
-describing the overall impact.
+5. **Summary Structure**:
+   - Write the summary as a single cohesive paragraph that flows logically:
+     - Begin with a brief overview of the main themes and changes.
+     - Provide a concise explanation of the reasons for these changes.
+     - Conclude with the overall impact on the project.
+   - **Length**: Keep the summary within **300 words**. Use brief sentences or phrases for clarity.
 
 6. **Tone and Audience**:
-   - Use a **professional** and **neutral tone**. The summary should be understandable to
-**developers**, **project managers**, or **external reviewers** who may not be intimately familiar
-with the commit details.
+   - Maintain a **professional and neutral tone**. Avoid excessive detail or overly casual language.
+   - Assume your audience includes individuals unfamiliar with the project specifics but knowledgeable in technology.
 
-7. **Edge Cases and Exceptions**:
-   - For **complex or highly technical commits**, provide
-additional context or explanation as needed, but ensure the overall summary remains
-concise.
-   - For **minor commits** (e.g., typo fixes, small refactors), only include the most
-essential change and purpose. Avoid including unnecessary details.
+7. **Examples**:
+   - Example 1 (Feature Addition and Refactor):
+     ```
+     A series of commits introduced a new reporting feature, allowing users to generate detailed analytics. The underlying codebase was refactored for improved scalability, ensuring future enhancements can be implemented seamlessly. Collectively, these changes enhance functionality and prepare the project for growth.
+     ```
+   - Example 2 (Bug Fixes and Minor Updates):
+     ```
+     The commit series resolved several critical bugs, including fixing memory leaks and addressing edge case failures in user authentication. Minor updates, such as typo corrections and code cleanup, improve overall maintainability. Together, these changes ensure greater reliability and code quality.
+     ```
 
-8. **Example Summary**:
-   - Commit 1: Fixed issue with user authentication, enforcing stronger password requirements for enhanced security.
-   - Commit 2: Added unit tests for the authentication process to handle edge cases more effectively.
-   - Commit 3: Refactored authentication logic to improve scalability and performance.
+### EDGE CASES ###
+- **Highly Technical Commits**: Provide brief explanations of technical terms if necessary, ensuring clarity for a broader audience.
+- **Conflicting Commits**: Note conflicts but focus on the overarching goals or themes.
+- **Unrelated Commits**: Acknowledge unrelated commits briefly and emphasize the dominant themes.
 
-### What Not to Do ###
-- **DO NOT OMIT CRITICAL CONTEXT**: Ensure each commit’s key change and purpose are explained clearly.
-- **DO NOT INCLUDE UNNECESSARY JARGON**: Avoid overloading the summary with overly specific technical details unless they are crucial for understanding the change.
-- **DO NOT BE VAGUE**: Provide concrete explanations for changes. For example, don’t simply state "Improvement made" without specifics.
-- **DO NOT OVERLOOK STRUCTURE**: A well-structured summary is essential. Ensure it is easy to follow and logically organized.
+### WHAT NOT TO DO ###
+- **DO NOT** list each commit separately.
+- **DO NOT** include excessive technical details unless critical to understanding the changes.
+- **DO NOT** omit significant changes or impacts, even for minor commits.
 
-### Additional Guidelines ###
-- If a commit depends on previous changes (e.g., features built upon earlier commits), mention this relationship for clarity.
-- If the project context or target audience is ambiguous, assume that the summary is for a general technical audience, not specific to the repository’s domain.
-
+### ADDITIONAL GUIDELINES ###
+- If commit dependencies or relationships are complex, mention how the changes build on one another.
+- Assume the summary is for a general technical audience unless otherwise specified.
 </system_prompt>"""
