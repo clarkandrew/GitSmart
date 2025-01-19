@@ -593,7 +593,7 @@ def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
         str: Status message indicating the result of the action.
     """
     if not changes:
-        return f"No {action}d changes detected."
+        return f"No {action}d changes found."
 
     choices = [f"{change['file']} (+{change['additions']}/-{change['deletions']})" for change in changes]
     selected_files = questionary.checkbox(
@@ -648,7 +648,7 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
     Handle the generation of a commit message and committing the changes.
     """
     if not diff:
-        console.print("[bold red]No staged changes detected.[/bold red]")
+        console.print("[bold red]No staged changes found.[/bold red]")
         return
 
     display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
@@ -1136,13 +1136,13 @@ def get_menu_options(staged_changes: List[Dict[str, Any]], unstaged_changes: Lis
 
     repo_status = "[green]✔[/] [bold black on green] All changes are up to date[/]\n"
     if staged_changes and unstaged_changes:
-        repo_status = "[#FFF781]⚠[/] [bold black on yellow] Staged and unstaged changes detected[/]\n"
+        repo_status = "[#FFF781]⚠[/] [bold black on yellow] Staged and unstaged changes found[/]\n"
         choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Stage Files", "Unstage Files", "Review Changes", "Select Model"]
     elif staged_changes:
-        repo_status = "[blue]➤[/] [bold white on blue] Staged changes detected[/]\n"
+        repo_status = "[blue]➤[/] [bold white on blue] Staged changes found[/]\n"
         choices = [f"Generate Commit for Staged Changes ({num_staged_files})", "Unstage Files", "Review Changes", "Select Model"]
     elif unstaged_changes:
-        repo_status = "[yellow]✗[/] [italic #FFF781] Unstaged changes detected[/]\n"
+        repo_status = "[yellow]✗[/] [italic #FFF781] Unstaged changes found[/]\n"
         choices = ["Stage Files", "Review Changes", "Select Model"]
 
     choices.extend(base_choices)
