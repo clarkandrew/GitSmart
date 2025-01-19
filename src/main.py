@@ -240,7 +240,7 @@ def generate_commit_message(diff: str) -> str:
         {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF:\n" + diff + USER_MSG_APPENDIX},
     ]
     body = {
-        "model": "openrouter/gemini-2.0-flash-thinking-exp",
+        "model":MODEL,
         "messages": messages,
         "max_tokens": MAX_TOKENS,
         "n": 1,
@@ -506,8 +506,7 @@ def handle_review_changes(staged_changes: List[Dict[str, Any]], unstaged_changes
         questionary.Choice(
             title=f"{file} [Staged]" if file in staged_files else file,
             value=file,
-            checked=file in staged_files,
-            style=configure_questionary_style()
+            checked=file in staged_files
         )
         for file in sorted(all_files)
     ]
