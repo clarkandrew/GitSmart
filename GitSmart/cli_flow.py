@@ -51,45 +51,66 @@ def get_menu_options(
     Compute dynamic menu items based on presence of staged/unstaged changes.
     Returns a tuple of (title, status message with rich formatting, menu choices).
     Includes total additions/deletions in the status message.
+
+    Enhanced so that when there are no changes at all (staged or unstaged),
+    it omits "Stage Files", "Unstage Files", and "Review Changes" from the menu.
     """
-    # Constants for base choices
+    from .git_utils import get_repo_name
+
+    # Base choices that are always relevant
     base_choices = [
-        "Stage Files",
-        "Unstage Files",
-        "Review Changes",
-        "Select Model",
-        "Ignore Files",
         "View Commit History",
-        "Push Repo",
         "Summarize Commits",
+        "Push Repo",
+        "Ignore Files",
+        "Select Model",
         "Exit"
     ]
 
+    # We will build the final choices here
     dynamic_choices = []
-    num_staged_files = len(staged_changes)
 
     # Calculate change statistics
     total_additions = sum(ch["additions"] for ch in staged_changes + unstaged_changes)
     total_deletions = sum(ch["deletions"] for ch in staged_changes + unstaged_changes)
+
+    # Basic repo name fallback
     repo_name = get_repo_name() or "UnknownRepo"
 
-    # Determine repo status with rich formatting
-    if staged_changes and unstaged_changes:
+    # Conditionally add menu items based on presence of changes
+    has_staged = bool(staged_changes)
+    has_unstaged = bool(unstaged_changes)
+
+    # 1. If we have staged changes
+    if has_staged:
+        dynamic_choices.append("Unstage Files")
+        dynamic_choices.append(f"Generate Commit for Staged Changes ({len(staged_changes)})")
+
+    # 2. If we have unstaged changes
+    if has_unstaged:
+        dynamic_choices.append("Stage Files")
+
+    # 3. If we have either staged or unstaged changes, user might still want to "Review Changes"
+    if has_staged or has_unstaged:
+        dynamic_choices.append("Review Changes")
+
+    # Determine overall repo status with color formatting
+    if has_staged and has_unstaged:
         repo_status = "[#FFF781]⚠[/] [bold black on yellow] Staged and unstaged changes found[/]\n"
-        dynamic_choices.append(f"Generate Commit for Staged Changes ({num_staged_files})")
-    elif staged_changes:
+    elif has_staged:
         repo_status = "[blue]➤[/] [bold white on blue] Staged changes found[/]\n"
-        dynamic_choices.append(f"Generate Commit for Staged Changes ({num_staged_files})")
-    elif unstaged_changes:
+    elif has_unstaged:
         repo_status = "[yellow]✗[/] [italic #FFF781] Unstaged changes found[/]\n"
     else:
         repo_status = "[green]✔[/] [bold black on green] All changes are up to date[/]"
 
-    # Add statistics with rich formatting
+    # Display totals in the status message
     repo_status += f"\n[bold white]{repo_name}[/bold white] [green]+{total_additions}[/green], [red]-{total_deletions}[/red]"
 
     title = "Select an action:"
+    # Combine any dynamic choices with the always-available base ones
     choices = dynamic_choices + base_choices
+
     return title, repo_status, choices
 
 def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
