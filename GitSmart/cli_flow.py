@@ -189,18 +189,43 @@ def handle_generate_commit(diff: str, staged_changes: List[Dict[str, Any]]):
 
         action = questionary.select(
             "What would you like to do?",
-            choices=["Commit", "Retry", "Cancel"],
+            choices=["Commit Changes", "Edit Message", "Retry", "Cancel"],
             style=configure_questionary_style()
         ).ask()
 
         printer.print_divider()
 
-        if action == "Commit":
+        if action == "Commit Changes":
             commit_status = run_git_command(["git", "commit", "-m", commit_message])
             if "Success" in commit_status:
                 return commit_status
             else:
                 console.print(f"[bold red]{commit_status}[/bold red]")
+        elif action == "Edit commit message":
+            edited_commit = questionary.text(
+                "Edit your commit message below:",
+                multiline=True,
+                default=commit_message,
+                style=configure_questionary_style()
+            ).unsafe_ask()
+
+            # Show the updated commit in a styled panel just like the first time.
+            # e.g.:
+            console.print(
+                Padding(Panel(
+                    Align.center(Padding(edited_commit, (3,5))),
+                    title="Edited Commit Message",
+                    border_style="#ffffff",
+                    style="#ffffff on #0D1116"
+                ), (3,8))
+            )
+
+            # Now ask to confirm or commit the newly edited message:
+            confirm_edit = questionary.select(
+                "Use this edited commit message?",
+                choices=["Commit", "Retry", "Cancel"],
+                style=configure_questionary_style()
+            ).ask()
         elif action == "Retry":
             logger.info("Retrying commit message generation.")
             handle_generate_commit(diff, staged_changes)

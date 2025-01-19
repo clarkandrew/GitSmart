@@ -147,8 +147,15 @@ def main(reload: bool = False):
 
     loop()
 
-if __name__ == "__main__":
+def entry_point():
+    """
+    Entry point function for the GitSmart console script.
+    This function is referenced in the setup configuration to initiate the application.
+    """
     parser = argparse.ArgumentParser(description="Automate git commit messages with enhanced features.")
     parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")
     args = parser.parse_args()
     main(reload=args.reload)
+
+if __name__ == "__main__":
+    entry_point()
