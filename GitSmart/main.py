@@ -46,11 +46,11 @@ def main(reload: bool = False):
         selected_model = MODEL
         while True:
             try:
-                title, repo_status, choices = get_menu_options(staged_changes, unstaged_changes)
+                title, repo_status, choices = get_menu_options(MODEL, staged_changes, unstaged_changes)
                 console.print(repo_status, justify="left")
 
                 # Present main menu with styling
-                action = main_menu_prompt(title, choices)
+                action = main_menu_prompt(MODEL, title, choices)
 
                 if action.startswith("Generate Commit for Staged Changes"):
                     reset_console()

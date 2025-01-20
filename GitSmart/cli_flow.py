@@ -32,7 +32,7 @@ cli_flow.py
 - If none, show 'No changes' row
 """
 
-def main_menu_prompt(title: str, choices: list) -> str:
+def main_menu_prompt(MODEL: str,title: str, choices: list) -> str:
     """
     Enhanced UI prompt for the main menu with questionary + custom style.
     """
@@ -44,6 +44,7 @@ def main_menu_prompt(title: str, choices: list) -> str:
     ).unsafe_ask()
 
 def get_menu_options(
+    MODEL: str,
     staged_changes: List[Dict[str, Any]],
     unstaged_changes: List[Dict[str, Any]]
 ) -> Tuple[str, str, List[str]]:
@@ -105,7 +106,7 @@ def get_menu_options(
         repo_status = "[green]✔[/] [bold black on green] All changes are up to date[/]"
 
     # Display totals in the status message
-    repo_status += f"\n[bold white]{repo_name}[/bold white] [green]+{total_additions}[/green], [red]-{total_deletions}[/red]"
+    repo_status += f"\n[bold white]{repo_name} ({MODEL})[/bold white] [green]+{total_additions}[/green], [red]-{total_deletions}[/red]"
 
     title = "Select an action:"
     # Combine any dynamic choices with the always-available base ones
