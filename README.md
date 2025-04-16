@@ -1,8 +1,8 @@
-<h1 align="center"><strong>C0MIT</strong></h1>
+<h1 align="center"><strong>GitSmart</strong></h1>
 <h2 align="center"><em>The AI-Powered Git Commit Assistant</em></h2>
 
 <div align="center">
-  <img src="assets/no-bg.png" alt="C0MIT Overview Image">
+  <img src="assets/no-bg.png" alt="GitSmart Overview Image">
 </div>
 
 <p align="center">
@@ -10,22 +10,22 @@
   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
   <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/github/contributors/yourusername/C0MIT" alt="Contributors">
-  <img src="https://img.shields.io/github/issues/yourusername/C0MIT" alt="Issues">
-  <img src="https://img.shields.io/github/issues-pr/yourusername/C0MIT" alt="PRs">
+  <img src="https://img.shields.io/github/contributors/yourusername/GitSmart" alt="Contributors">
+  <img src="https://img.shields.io/github/issues/yourusername/GitSmart" alt="Issues">
+  <img src="https://img.shields.io/github/issues-pr/yourusername/GitSmart" alt="PRs">
 </p>
 
 ---
 
-**C0MIT** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **C0MIT** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
+**GitSmart** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **GitSmart** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
 <div align="center">
-  <img src="assets/cc.png" alt="C0MIT Overview Image">
+  <img src="assets/cc.png" alt="GitSmart Overview Image">
 </div>
 
 ---
 
-## Why You'd Need C0MIT
+## Why You'd Need GitSmart
 
 #### **Streamlined Workflow**
 
@@ -77,7 +77,7 @@
 
 1. **Observations**:
    - The `README.md` file has been modified to update an image link.
-   - Specifically, the `C0MIT Overview Image` source has changed from `assets/comit.png` to `assets/no-bg.png`.
+   - Specifically, the `GitSmart Overview Image` source has changed from `assets/comit.png` to `assets/no-bg.png`.
    - A new file, `no-bg.png`, has been added to the `assets` directory.
    - The nature of the change suggests a visual update, potentially for aesthetic or branding reasons.
 
@@ -89,7 +89,7 @@
 💄 Update README Image Asset
 
 **WHAT:** Replaced `comit.png` with `no-bg.png` in README.md
-**WHY:** Refresh project's visual identity by updating the C0MIT Overview Image to a new version without background (`no-bg.png`), enhancing overall UI consistency and appeal.
+**WHY:** Refresh project's visual identity by updating the GitSmart Overview Image to a new version without background (`no-bg.png`), enhancing overall UI consistency and appeal.
 
 **DETAILS:**
 - **Affected File(s):**
@@ -106,7 +106,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/C0MIT.git
+git clone https://github.com/yourusername/GitSmart.git
 ```
 
 ### 2. **Install Dependencies**
@@ -136,22 +136,22 @@ max_tokens = 500
 temperature = 0.7
 ```
 
-### 4. **Run C0MIT**
+### 4. **Run GitSmart**
 
-To use **C0MIT** from any Git directory, add it to your system's PATH:
+To use **GitSmart** from any Git directory, add it to your system's PATH:
 
 #### a. Make the Script Executable
 
 ```bash
-chmod +x /path/to/C0MIT/src/main.py
+chmod +x /path/to/GitSmart/src/main.py
 ```
 
-#### b. Add C0MIT to PATH
+#### b. Add GitSmart to PATH
 
 Add the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
 
 ```bash
-export PATH=$PATH:/path/to/C0MIT/src
+export PATH=$PATH:/path/to/GitSmart/src
 ```
 
 Reload your shell configuration:
@@ -160,12 +160,12 @@ Reload your shell configuration:
 source ~/.bashrc  # or source ~/.zshrc
 ```
 
-#### c. Execute C0MIT
+#### c. Execute GitSmart
 
 In your Git repository, run:
 
 ```bash
-C0MIT
+GitSmart
 ```
 
 Follow the on-screen prompts to generate and commit your changes.
@@ -173,7 +173,7 @@ Follow the on-screen prompts to generate and commit your changes.
 ---
 
 <div align="center">
-  <img src="assets/bb.png" alt="C0MIT Overview Image">
+  <img src="assets/bb.png" alt="GitSmart Overview Image">
 </div>
 
 ---
@@ -255,7 +255,7 @@ print(commit_message)
 ### Integration Patterns and Best Practices
 
 - **Secure API Credentials**: Keep your `config.ini` file out of version control (add it to `.gitignore`).
-- **Automate with Git Hooks**: Integrate **C0MIT** into your Git workflow using pre-commit hooks.
+- **Automate with Git Hooks**: Integrate **GitSmart** into your Git workflow using pre-commit hooks.
 - **Regular Updates**: Periodically update dependencies for security and performance improvements.
 
 ### Performance Optimization Guidelines
@@ -272,7 +272,7 @@ print(commit_message)
   - *Solution*: Verify your `auth_token` and `api_url` in `config.ini`.
 
 - **No Staged Changes Detected**
-  - *Solution*: Stage your changes using `git add <file>` before running **C0MIT**.
+  - *Solution*: Stage your changes using `git add <file>` before running **GitSmart**.
 
 - **Network Timeouts**
   - *Solution*: Check your internet connection and firewall settings.
@@ -328,8 +328,8 @@ We welcome contributions from developers of all experience levels!
 1. **Clone Your Fork**
 
    ```bash
-   git clone https://github.com/yourusername/C0MIT.git
-   cd C0MIT
+   git clone https://github.com/yourusername/GitSmart.git
+   cd GitSmart
    ```
 
 2. **Install Development Dependencies**
@@ -374,7 +374,7 @@ We are committed to fostering a welcoming community. Please read our [Code of Co
 
 ---
 
-## **Before and After: Transforming Your Git Commits with C0MIT**
+## **Before and After: Transforming Your Git Commits with GitSmart**
 
 **Before:**
 
@@ -382,7 +382,7 @@ Your Git commit messages are a tangled mess—full of vague descriptions like "f
 
 **After:**
 
-Run **C0MIT** and enjoy the perks of AI-powered commit messages that are clear, standardized, and meaningful. Effortlessly track changes, collaborate seamlessly, and maintain a professional project history without the hassle.
+Run **GitSmart** and enjoy the perks of AI-powered commit messages that are clear, standardized, and meaningful. Effortlessly track changes, collaborate seamlessly, and maintain a professional project history without the hassle.
 
 ---
 
@@ -407,13 +407,13 @@ Run **C0MIT** and enjoy the perks of AI-powered commit messages that are clear, 
   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
   <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/github/contributors/yourusername/C0MIT" alt="Contributors">
-  <img src="https://img.shields.io/github/issues/yourusername/C0MIT" alt="Issues">
-  <img src="https://img.shields.io/github/issues-pr/yourusername/C0MIT" alt="PRs">
+  <img src="https://img.shields.io/github/contributors/yourusername/GitSmart" alt="Contributors">
+  <img src="https://img.shields.io/github/issues/yourusername/GitSmart" alt="Issues">
+  <img src="https://img.shields.io/github/issues-pr/yourusername/GitSmart" alt="PRs">
 </p>
 
 ---
 
-**Start transforming your Git workflow today with C0MIT. Enhance your productivity, improve collaboration, and maintain a clean project history effortlessly. [Get Started Now](#getting-started).**
+**Start transforming your Git workflow today with GitSmart. Enhance your productivity, improve collaboration, and maintain a clean project history effortlessly. [Get Started Now](#getting-started).**
 
 ---

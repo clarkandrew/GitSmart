@@ -169,7 +169,9 @@ USER_MSG_APPENDIX = """
 2. TASK 2: Think step-by-step to understand **WHAT** and **WHY** for each change, then choose the commit type(s).
 3. TASK 3: Write a complete commit message that captures **all details** of the changes. Place the final message between `<COMMIT_MESSAGE>` tags.
 
-## CRITICAL REMINDER: NEVER PRODUCE THE FINAL COMMIT MESSAGE BEFORE PROVIDING AN EXAUHSTIVE ANALYSIS OF ALL THE CHANGES.
+## CRITICAL: NEVER PRODUCE THE FINAL COMMIT MESSAGE BEFORE PROVIDING AN EXAUHSTIVE ANALYSIS OF ALL THE CHANGES.
+
+## CRITICAL: If the final commit message is not encased within <COMMIT_MESSAGE> and </COMMIT_MESSAGE>, it will not be properly parsed and you will be terminated.
 
 Now begin your step-by-step review of the file changes for the commit above. Finally, produce a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
 """
@@ -321,7 +323,9 @@ USER_MSG_APPENDIX_EMOJI = """
 
 ## CRITICAL REMINDER: NEVER PRODUCE THE FINAL COMMIT MESSAGE BEFORE PROVIDING AN EXAUHSTIVE ANALYSIS OF ALL THE CHANGES.
 
-Now begin your step-by-step review of the file changes for the commit above. Finally, produce a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
+Now begin your step-by-step review of the file changes for the commit above. Finally, produce a masterful commit message in the required format between angled brackets `<COMMIT_MESSAGE>commit message here</COMMIT_MESSAGE>`.
+
+CRITICAL: If the final commit message is not encased within <COMMIT_MESSAGE> and </COMMIT_MESSAGE>, it will not be properly parsed and you will be terminated.
 
 P.S. Don't forget to carefully select the emoji(s). They're required at the start every commit!
 """

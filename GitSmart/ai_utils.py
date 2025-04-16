@@ -19,7 +19,13 @@ from count_tokens import count_tokens_in_string
 
 # Import the new LLM helper function.
 from .llm import get_chat_completion
-
+def extract_from_codeblocks(text: str) -> str:
+    """
+    Extract text from code blocks enclosed within triple backticks or more.
+    """
+    pattern = r"```commit(?:`{3,})?(.*?)```(?:`{3,})?"
+    matches = re.findall(pattern, text, re.DOTALL)
+    return "\n".join(matches)
 def extract_tag_value(text: str, tag: str) -> str:
     """
     Extract the value enclosed within specified XML-like or bracket-like tags, case-insensitive.
@@ -134,7 +140,7 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
                 prepend_msg = f"> Analyzing changes to staged files with {clean_model_name(MODEL)} ({request_tokens} tokens)"
                 status.update(prepend_msg)
                 # Stream the commit message from the LLM provider using the new helper.
-                commit_message = get_chat_completion(
+                commit_response = get_chat_completion(
                     model=MODEL,
                     messages=messages,
                     max_tokens=MAX_TOKENS,
@@ -143,13 +149,20 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
                     timeout=60,
                     status_callback=lambda text: status.update(text)
                 )
-                # Extract only the commit message between <COMMIT_MESSAGE> tags.
-                commit_message_text = extract_tag_value(commit_message, "COMMIT_MESSAGE")
+                if "</think>" in commit_response:
+                    commit_response = commit_response.split("</think>")[1]
+
+                commit_message_text = None
+                if "<COMMIT_MESSAGE>" in commit_response:
+                    commit_message_text = extract_tag_value(commit_response, "COMMIT_MESSAGE")
+                elif "```commit" in commit_response:
+                    commit_message_text = extract_from_codeblocks(commit_response)
+
                 if commit_message_text:
                     return commit_message_text
                 else:
                     logger.error("Could not extract COMMIT_MESSAGE tags. Retrying...")
-                    console.print(f"[bold red]Commit message format incorrect.\n\n```\n\n{commit_message}\n\n```\n\nRetrying...[/bold red]")
+                    console.print(f"[bold red]Commit message format incorrect.\n\n```\n\n{commit_response}\n\n```\n\nRetrying...[/bold red]")
                     retry_count += 1
                     time.sleep(2)
         except Exception as e:
