@@ -7,7 +7,7 @@ from typing import Optional
 
 from .ui import console, configure_questionary_style
 from .config import (
-    AUTH_TOKEN, API_URL, MODEL, MAX_TOKENS, TEMPERATURE,
+    AUTH_TOKEN, API_URL, TOKEN_INCREMENT, MODEL, MAX_TOKENS, TEMPERATURE,
     USE_EMOJIS, logger
 )
 from .git_utils import parse_diff
@@ -76,11 +76,42 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
         )
     return truncated_diff
 
+
+def calculate_dynamic_max_tokens(
+    request_tokens: int,
+    max_tokens: Optional[int] = None,
+    increment: int = TOKEN_INCREMENT
+) -> int:
+    """
+    Dynamically calculate the max_tokens value based on request_tokens.
+
+    Args:
+        request_tokens (int): The number of tokens in the request.
+        max_tokens (Optional[int]): The upper limit for max_tokens. Defaults to DEFAULT_MAX_TOKENS.
+        increment (int): The number of tokens to add to request_tokens. Defaults to 2000.
+
+    Returns:
+        int: The dynamically calculated max_tokens, clamped to the upper limit.
+
+    Raises:
+        ValueError: If request_tokens is negative.
+    """
+    if max_tokens is None:
+        max_tokens = DEFAULT_MAX_TOKENS
+
+    if request_tokens < 0:
+        raise ValueError("request_tokens must be non-negative")
+
+    # Calculate the dynamic max_tokens, ensuring it does not exceed the allowed maximum
+    dynamic_max = min(request_tokens + increment, max_tokens)
+    return dynamic_max
+
 def generate_commit_message(MODEL: str, diff: str) -> str:
     """
     Generate a commit message using an external service.
     Retries until a properly formatted commit message is received or max retries is reached.
     """
+    max_tokens = MAX_TOKENS
     logger.debug(USE_EMOJIS)
     INSTRUCT_PROMPT = SYSTEM_MESSAGE_EMOJI if USE_EMOJIS else SYSTEM_MESSAGE
     logger.debug("Entering generate_commit_message function.")
@@ -91,23 +122,30 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
     ]
 
     request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + diff + USER_MSG_APPENDIX)
+    logger.debug(f"request_tokens {request_tokens}")
+
+
+    max_tokens =  calculate_dynamic_max_tokens(request_tokens,max_tokens)
+
     max_retries = 5
     retry_count = 0
+    logger.debug(f"max_tokens {max_tokens}")
 
     while retry_count < max_retries:
-        if request_tokens > MAX_TOKENS:
+        logger.debug(f"attempt {retry_count}")
+        if request_tokens > max_tokens:
             logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\nTruncating...")
-            truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, MAX_TOKENS)
+            truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, max_tokens)
             messages = [
                 {"role": "system", "content": INSTRUCT_PROMPT},
                 {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}
             ]
             request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_diff + USER_MSG_APPENDIX)
-            logger.info(f"After truncation, request tokens are {request_tokens}/{MAX_TOKENS}.")
+            logger.info(f"After truncation, request tokens are {request_tokens}/{max_tokens}.")
 
-        if request_tokens > MAX_TOKENS:
+        if request_tokens > max_tokens:
             warning_message = (
-                f"The generated commit message exceeds the maximum token limit of {MAX_TOKENS} tokens. "
+                f"The generated commit message exceeds the maximum token limit of {max_tokens} tokens. "
                 "Do you want to proceed?"
             )
             if not questionary.confirm(warning_message, style=configure_questionary_style()).ask():
@@ -143,7 +181,7 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
                 commit_response = get_chat_completion(
                     model=MODEL,
                     messages=messages,
-                    max_tokens=MAX_TOKENS,
+                    max_tokens=max_tokens,
                     temperature=TEMPERATURE,
                     stream=True,
                     timeout=60,

@@ -17,6 +17,7 @@ MAX_TOKENS = int(config["API"]["max_tokens"])
 TEMPERATURE = float(config["API"]["temperature"])
 USE_EMOJIS = True if config["PROMPTING"]["use_emojis"] in ["true", True] else False
 DEBUG = True if config["APP"]["debug"] in ["true", True] else False
+TOKEN_INCREMENT = 3000
 
 # Initialize logger
 logging.basicConfig(
