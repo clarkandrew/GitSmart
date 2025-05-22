@@ -173,7 +173,7 @@ USER_MSG_APPENDIX = """
 
 ## CRITICAL: If the final commit message is not encased within <COMMIT_MESSAGE> and </COMMIT_MESSAGE>, it will not be properly parsed and you will be terminated.
 
-Now begin your step-by-step review of the file changes for the commit above. Finally, produce a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
+Now begin your step-by-step review of ALL changes made across ALL files above. Finally, produce a masterful commit message in the required format between angled brackets <COMMIT_MESSAGE>details here </COMMIT_MESSAGE>.
 """
 
 SYSTEM_MESSAGE_EMOJI = """You are to act as an author of a commit message in Git. Create a Concise, Expert-Level Commit Message that follows the Conventional Commit Convention, providing a clear WHAT and WHY explanation in a unified, structured message (aim for <74 characters per line). Use a thorough, step-by-step thought process to ensure accuracy. You may optionally include an emoji (icon) if appropriate.

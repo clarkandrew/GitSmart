@@ -31,7 +31,6 @@ main.py
 - Always uses get_and_display_status() to show both staged/unstaged
 - Passes dynamic menu from get_menu_options() to main_menu_prompt
 """
-
 def main(reload: bool = False):
 
     console.print("[bold cyan]# GitSmart[/bold cyan]")
@@ -41,11 +40,13 @@ def main(reload: bool = False):
 
     def loop():
         nonlocal exit_prompted
-        diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
         global MODEL
-        selected_model = MODEL
+
         while True:
             try:
+                # Always refresh status before showing the menu
+                diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+
                 title, repo_status, choices = get_menu_options(MODEL, staged_changes, unstaged_changes)
                 console.print(repo_status, justify="left")
 
@@ -55,31 +56,27 @@ def main(reload: bool = False):
                 if action.startswith("Generate Commit for Staged Changes"):
                     reset_console()
                     status_msg = handle_generate_commit(MODEL, diff, staged_changes)
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+                    # No need to refresh here; will refresh at top of loop
                     if status_msg:
                         console.print(status_msg)
 
                 elif action == "Review Changes":
                     reset_console()
                     handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "Stage Files":
                     status_msg = handle_stage_files(unstaged_changes)
                     reset_console()
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
 
                 elif action == "Unstage Files":
                     status_msg = handle_unstage_files(staged_changes)
                     reset_console()
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
 
                 elif action == "Ignore Files":
                     handle_ignore_files()
                     reset_console()
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "View Commit History":
                     reset_console()
@@ -91,19 +88,16 @@ def main(reload: bool = False):
                 elif action == "Select Model":
                     reset_console()
                     MODEL = select_model()
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(f"[bold green]Model selected:[/bold green] {MODEL}")
 
                 elif action == "Push Repo":
                     reset_console()
                     status_msg = handle_push_repo()
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
                     console.print(status_msg)
 
                 elif action == "Summarize Commits":
                     reset_console()
                     summarize_selected_commits()
-                    diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
 
                 elif action == "Exit":
                     reset_console()
@@ -135,14 +129,13 @@ def main(reload: bool = False):
                 console.print("[bold yellow]...[/bold yellow]")
                 time.sleep(refresh_interval)
                 printer.print_divider("Auto Refresh")
-                diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
+                get_and_display_status()
                 sys.stdout.flush()
 
         refresh_thread = threading.Thread(target=auto_refresh, daemon=True)
         refresh_thread.start()
 
     loop()
-
 def entry_point():
     """
     Minimal wrapper for console_scripts entry point.

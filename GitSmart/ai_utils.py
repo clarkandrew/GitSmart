@@ -118,7 +118,7 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
 
     messages = [
         {"role": "system", "content": INSTRUCT_PROMPT},
-        {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF:\n" + diff + (USER_MSG_APPENDIX if not USE_EMOJIS else USER_MSG_APPENDIX_EMOJI)},
+        {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF(S):\n\n" + diff + (USER_MSG_APPENDIX if not USE_EMOJIS else USER_MSG_APPENDIX_EMOJI)},
     ]
 
     request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + diff + USER_MSG_APPENDIX)
