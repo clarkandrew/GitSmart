@@ -9,10 +9,6 @@
   <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
   <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/github/contributors/yourusername/GitSmart" alt="Contributors">
-  <img src="https://img.shields.io/github/issues/yourusername/GitSmart" alt="Issues">
-  <img src="https://img.shields.io/github/issues-pr/yourusername/GitSmart" alt="PRs">
 </p>
 
 ---
@@ -106,7 +102,7 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/GitSmart.git
+git clone https://github.com/clarkandrew/GitSmart.git
 ```
 
 ### 2. **Install Dependencies**
@@ -397,20 +393,6 @@ Run **GitSmart** and enjoy the perks of AI-powered commit messages that are clea
 - **Staging**: The process of selecting changes to include in the next commit.
 - **Unstaging**: Removing changes from the staging area.
 - **Version Control System**: Software that helps manage changes to source code over time.
-
----
-
-## **Badges**
-
-<p align="center">
-  <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
-  <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-  <img src="https://img.shields.io/github/contributors/yourusername/GitSmart" alt="Contributors">
-  <img src="https://img.shields.io/github/issues/yourusername/GitSmart" alt="Issues">
-  <img src="https://img.shields.io/github/issues-pr/yourusername/GitSmart" alt="PRs">
-</p>
 
 ---
 
