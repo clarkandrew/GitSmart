@@ -201,10 +201,6 @@ Follow the on-screen prompts to generate and commit your changes.
   - Graphical User Interface (GUI) for users who prefer not to use the command line.
   - Enhanced diff visualization with syntax highlighting.
 
-- **1.3.0**
-  - Compatibility with other version control systems (e.g., Mercurial, SVN).
-  - Multi-language support for commit messages.
-
 ---
 
 ## **Technical Implementation**
@@ -226,28 +222,6 @@ Follow the on-screen prompts to generate and commit your changes.
 - **API Credentials**: Valid `auth_token` and `api_url` in `config.ini`.
 - **Network Access**: Internet connection is required for API calls.
 
-### API Reference
-
-#### Function: `generate_commit_message(diff: str) -> str`
-
-Generates a commit message using the AI service.
-
-**Parameters**
-
-- `diff` (str): The Git diff of staged changes.
-
-**Returns**
-
-- `str`: The generated commit message.
-
-**Example**
-
-```python
-diff = get_git_diff(staged=True)
-commit_message = generate_commit_message(diff)
-print(commit_message)
-```
-
 ### Integration Patterns and Best Practices
 
 - **Secure API Credentials**: Keep your `config.ini` file out of version control (add it to `.gitignore`).
@@ -259,29 +233,6 @@ print(commit_message)
 - **Limit Diff Size**: Stage only relevant changes to reduce processing time.
 - **Adjust AI Settings**: Modify `max_tokens` and `temperature` in `config.ini` to balance performance and output quality.
 - **Cache Responses**: Implement caching if you frequently regenerate commit messages for the same changes.
-
-### Troubleshooting Guide
-
-#### Common Issues and Solutions
-
-- **API Authentication Errors**
-  - *Solution*: Verify your `auth_token` and `api_url` in `config.ini`.
-
-- **No Staged Changes Detected**
-  - *Solution*: Stage your changes using `git add <file>` before running **GitSmart**.
-
-- **Network Timeouts**
-  - *Solution*: Check your internet connection and firewall settings.
-
-### Known Limitations and Workarounds
-
-- **Large Diffs**
-  - *Limitation*: Processing very large diffs may slow down the AI response.
-  - *Workaround*: Commit changes in smaller batches.
-
-- **API Rate Limits**
-  - *Limitation*: Exceeding API limits may result in errors.
-  - *Workaround*: Monitor your usage or upgrade your API plan.
 
 ---
 
@@ -317,29 +268,6 @@ We welcome contributions from developers of all experience levels!
 
    Submit your pull request for review.
 
-### Development Setup Guide
-
-#### Setting Up the Development Environment
-
-1. **Clone Your Fork**
-
-   ```bash
-   git clone https://github.com/yourusername/GitSmart.git
-   cd GitSmart
-   ```
-
-2. **Install Development Dependencies**
-
-   ```bash
-   pip install -r dev-requirements.txt
-   ```
-
-3. **Run Tests**
-
-   ```bash
-   pytest
-   ```
-
 ### Code Review Standards
 
 - **Adhere to PEP 8**: Follow Python's style guidelines for clean and readable code.
@@ -350,19 +278,9 @@ We welcome contributions from developers of all experience levels!
 
 When creating issues or pull requests, please use the provided templates to include all necessary information.
 
-### Security Disclosure Process
-
-If you discover a security vulnerability, please contact us directly at [security@yourdomain.com](mailto:security@yourdomain.com) instead of opening a public issue.
-
 ### Licensing Details
 
 This project is licensed under the [MIT License](LICENSE).
-
-### Support Channels and SLAs
-
-- **GitHub Issues**: For bug reports and feature requests.
-- **Email Support**: [support@yourdomain.com](mailto:support@yourdomain.com)
-- **Response Time**: We aim to respond within 2 business days.
 
 ### Code of Conduct
 
