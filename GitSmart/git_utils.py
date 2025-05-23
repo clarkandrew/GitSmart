@@ -47,6 +47,7 @@ def get_git_diff(staged: bool = True) -> str:
         logger.error(f"Failed to get {'staged' if staged else 'unstaged'} diff: {e}")
         return ""
 
+
 def parse_diff(diff: str) -> List[Dict[str, Any]]:
     """
     Parse the git diff to extract file names, additions, and deletions.

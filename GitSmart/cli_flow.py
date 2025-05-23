@@ -6,9 +6,27 @@ import sys
 import time
 import threading
 import questionary
+from questionary import Style
 from typing import List, Dict, Any, Tuple, Optional
 
-from .config import logger
+# Git-themed questionary style
+fancy_questionary_style = Style([
+    ('qmark', 'fg:#F14E32 bold'),        # Git red-orange
+    ('question', 'bold #F1502F'),        # Git orange
+    ('answer', 'fg:#2ECC40 bold'),       # Green for confirmed answer
+    ('pointer', 'fg:#F14E32 bold'),      # Git red-orange pointer
+    ('highlighted', 'fg:#2D2D2D bg:#F8E16C bold'),  # Highlighted choice: dark text on yellow
+    ('selected', 'fg:#2D2D2D bg:#F8E16C bold'), # Selected item: dark text on yellow (like staged)
+    ('separator', 'fg:#F8E16C'),         # Separator: yellow (like staged)
+    ('instruction', 'italic #6A737D'),   # Instructions: gray
+    ('text', 'bold #E0E0E0'),            # Chain name: light gray
+    ('version', 'bold #F8E16C'),         # Version: yellow
+    ('description', '#A9A9A9 italic'),   # Description: dark gray
+    ('disabled', 'fg:#A9A9A9 italic'),   # Disabled: dark gray italic
+    ('note', 'fg:#96DF71')               # Note: green
+])
+
+from .config import logger, MODEL_CACHE, MODEL, DEFAULT_MODEL
 from .ui import console, printer, create_styled_table, configure_questionary_style
 from .git_utils import (
     parse_diff,
@@ -32,15 +50,39 @@ cli_flow.py
 - If none, show 'No changes' row
 """
 
-def main_menu_prompt(MODEL: str,title: str, choices: list) -> str:
+def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
     """
     Enhanced UI prompt for the main menu with questionary + custom style.
+    Uses Git-themed colors and highlights 'Generate Commit' if staged changes exist.
     """
+    # Check for staged changes to highlight 'Generate Commit'
+    _, _, staged_changes, _ = get_status()
+    styled_choices = []
+    default_choice = None
+
+    for c in choices:
+        # Highlight the generate commit option if staged changes exist
+        if isinstance(c, str) and ("Generate Commit" in c or "Generate Commit for Staged Changes" in c):
+            if staged_changes:
+                # Add a special marker for styled commit option
+                styled_choices.append(
+                    questionary.Choice(
+                        title=f"🌟 {c}", # Style will be handled by 'highlighted' in fancy_questionary_style
+                        value=c
+                    )
+                )
+                default_choice = c
+            else: # Corresponds to `if staged_changes:`
+                styled_choices.append(c)
+        else: # Corresponds to `if isinstance(c, str) and ...`
+            styled_choices.append(c)
+
     return questionary.select(
         title,
-        choices=choices,
-        style=configure_questionary_style(),
-        instruction="(Use ↑/↓ to move, Enter to select)"
+        choices=styled_choices,
+        style=fancy_questionary_style,
+        instruction="(Use ↑/↓ to move, Enter to select)",
+        default=default_choice
     ).unsafe_ask()
 
 def get_menu_options(
@@ -477,17 +519,39 @@ def get_and_display_status():
     return diff, unstaged_diff, staged_changes, unstaged_changes
 
 def select_model():
+    """
+    Prompts the user to select an AI model and saves the selection to cache.
+    The selected model persists between application restarts.
+
+    Returns:
+        str: The selected model name
+    """
     from prompt_toolkit.history import FileHistory
     import questionary
 
-    history_dir = ".C0MMIT"
+    # Set up history directory for command history
+    history_dir = ".gitsmart"
     if os.path.exists(history_dir) and not os.path.isdir(history_dir):
         raise FileExistsError(f"A file named '{history_dir}' already exists.")
     os.makedirs(history_dir, exist_ok=True)
     history_file = os.path.join(history_dir, "model_selection")
 
     global MODEL
-    MODEL = questionary.text("Select a model:\n", history=FileHistory(history_file)).ask()
+
+
+
+    # Prompt user for model selection with current model as default
+    selected_model = questionary.text(
+        "Select a model:\n",
+        history=FileHistory(history_file),
+        default=DEFAULT_MODEL
+    ).ask()
+
+    if selected_model:
+        MODEL = selected_model
+        # Save the selected model to cache for persistence
+        MODEL_CACHE["last_model"] = MODEL
+
     return MODEL
 
 def reset_console():

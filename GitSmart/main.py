@@ -4,7 +4,8 @@ import argparse
 import sys
 import time
 
-from .config import logger, MODEL, DEBUG
+
+from .config import logger, MODEL, DEBUG, MODEL_CACHE
 from .ui import console, printer
 from .cli_flow import (
     get_and_display_status,
@@ -39,8 +40,15 @@ def main(reload: bool = False):
     exit_prompted = 0
 
     def loop():
+        """Main application loop that handles user interactions."""
         nonlocal exit_prompted
-        global MODEL
+        global MODEL, MODEL_CACHE
+
+        # Load saved model from cache at startup
+        cached_model = MODEL_CACHE.get("last_model", None)
+        if cached_model:
+            MODEL = cached_model
+            console.print(f"[bold green]Using saved model:[/bold green] {MODEL}")
 
         while True:
             try:
@@ -88,6 +96,7 @@ def main(reload: bool = False):
                 elif action == "Select Model":
                     reset_console()
                     MODEL = select_model()
+                    # select_model already updates the cache, so no need to do it again here
                     console.print(f"[bold green]Model selected:[/bold green] {MODEL}")
 
                 elif action == "Push Repo":
@@ -139,6 +148,7 @@ def main(reload: bool = False):
 def entry_point():
     """
     Minimal wrapper for console_scripts entry point.
+    Parses command line arguments and launches the main application.
     """
     parser = argparse.ArgumentParser(description="Automate git commit messages with enhanced features.")
     parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")

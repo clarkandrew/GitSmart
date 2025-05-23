@@ -1,6 +1,7 @@
 import os
 import configparser
 import logging
+from diskcache import Cache
 
 # Initialize the config parser
 config = configparser.ConfigParser()
@@ -9,14 +10,21 @@ config = configparser.ConfigParser()
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config.ini")
 config.read(CONFIG_PATH)
 
+# Directory for persistent storage
+history_dir = ".gitsmart"
+MODEL_CACHE = Cache(f"{history_dir}/model_cache")
+
 # Load configurations
 AUTH_TOKEN = config["API"]["auth_token"]
 API_URL = config["API"]["api_url"]
-MODEL = config["API"]["model"]
+
+# Check for cached model first, fallback to config if not found
+MODEL = MODEL_CACHE.get("last_model", config["API"]["model"])
+DEFAULT_MODEL = config["API"]["model"]
 MAX_TOKENS = int(config["API"]["max_tokens"])
 TEMPERATURE = float(config["API"]["temperature"])
-USE_EMOJIS = True if config["PROMPTING"]["use_emojis"] in ["true", True] else False
-DEBUG = True if config["APP"]["debug"] in ["true", True] else False
+USE_EMOJIS = config["PROMPTING"]["use_emojis"].lower() == "true"
+DEBUG = config["APP"]["debug"].lower() == "true"
 TOKEN_INCREMENT = 3000
 
 # Initialize logger
