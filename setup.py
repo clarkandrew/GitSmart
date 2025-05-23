@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="gitsmart",
-    version="0.1.0",
+    version="1.0.0",
     description="AI-Powered Git Commit Assistant",
-    author="Your Name",
+    author="Andrew Clark",
     packages=find_packages(),  # or ["GitSmart"] if you prefer explicitly
     install_requires=[
         "questionary>=1.10.0",

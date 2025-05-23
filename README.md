@@ -99,26 +99,70 @@
 
 ## **Getting Started**
 
-### 1. Clone the Repository
+### Quick Setup (Recommended)
+
+You can quickly set up GitSmart using our automated installation script:
+
+```bash
+# Clone the repository
+git clone https://github.com/clarkandrew/GitSmart.git
+cd GitSmart
+
+# Run the setup script
+bash setup.sh
+```
+
+This script will:
+- Set up a Python virtual environment
+- Install all dependencies
+- Create a configuration file
+- Add convenient aliases (`gitsmart` and `gg`) to your shell configuration
+
+Follow the on-screen prompts to complete the setup.
+
+### Manual Installation
+
+If you prefer to install manually, follow these steps:
+
+#### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/clarkandrew/GitSmart.git
+cd GitSmart
 ```
 
-### 2. **Install Dependencies**
+#### 2. Setup Python Virtual Environment
+
+Create and activate a virtual environment (requires Python 3.7 or higher):
+
+```bash
+# Create the virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+```
+
+#### 3. Install Dependencies
 
 Install the required Python packages:
 
 ```bash
 pip install -r requirements.txt
+
+# Install the package in development mode
+pip install -e .
 ```
 
-### 3. **Configure the Application**
+#### 4. Configure the Application
 
 Rename the example configuration file and update it with your API credentials:
 
 ```bash
-mv example.config.ini config.ini
+cp example.config.ini config.ini
 ```
 
 Edit `config.ini`:
@@ -132,22 +176,14 @@ max_tokens = 500
 temperature = 0.7
 ```
 
-### 4. **Run GitSmart**
+#### 5. Setup Command Aliases
 
-To use **GitSmart** from any Git directory, add it to your system's PATH:
-
-#### a. Make the Script Executable
+Add convenient aliases for `gitsmart` and `gg` to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
 
 ```bash
-chmod +x /path/to/GitSmart/src/main.py
-```
-
-#### b. Add GitSmart to PATH
-
-Add the following line to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
-
-```bash
-export PATH=$PATH:/path/to/GitSmart/src
+# Add these lines to your shell configuration file
+alias gitsmart="python -m GitSmart.main"
+alias gg="python -m GitSmart.main"
 ```
 
 Reload your shell configuration:
@@ -156,12 +192,13 @@ Reload your shell configuration:
 source ~/.bashrc  # or source ~/.zshrc
 ```
 
-#### c. Execute GitSmart
+### Running GitSmart
 
-In your Git repository, run:
+In any Git repository, you can now use:
 
 ```bash
-GitSmart
+gitsmart  # or the shorter alias
+gg
 ```
 
 Follow the on-screen prompts to generate and commit your changes.

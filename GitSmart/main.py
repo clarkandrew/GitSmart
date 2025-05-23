@@ -48,13 +48,12 @@ def main(reload: bool = False):
         cached_model = MODEL_CACHE.get("last_model", None)
         if cached_model:
             MODEL = cached_model
-            console.print(f"[bold green]Using saved model:[/bold green] {MODEL}")
 
         while True:
             try:
                 # Always refresh status before showing the menu
                 diff, unstaged_diff, staged_changes, unstaged_changes = get_and_display_status()
-
+                console.print("\n")
                 title, repo_status, choices = get_menu_options(MODEL, staged_changes, unstaged_changes)
                 console.print(repo_status, justify="left")
 
