@@ -8,13 +8,12 @@ import threading
 import questionary
 from questionary import Style
 from typing import List, Dict, Any, Tuple, Optional
-
 # Git-themed questionary style
 fancy_questionary_style = Style([
-    ('qmark', 'fg:#F14E32 bold'),        # Git red-orange
-    ('question', 'bold #F1502F'),        # Git orange
+    ('qmark', 'fg:#a259ff bold'),        # GitHub purple
+    ('question', 'bold #a259ff'),        # GitHub purple
     ('answer', 'fg:#2ECC40 bold'),       # Green for confirmed answer
-    ('pointer', 'fg:#F14E32 bold'),      # Git red-orange pointer
+    ('pointer', 'fg:#a259ff bold'),      # GitHub purple pointer
     ('highlighted', 'fg:#2D2D2D bg:#F8E16C bold'),  # Highlighted choice: dark text on yellow
     ('selected', 'fg:#2D2D2D bg:#F8E16C bold'), # Selected item: dark text on yellow (like staged)
     ('separator', 'fg:#F8E16C'),         # Separator: yellow (like staged)
@@ -23,7 +22,12 @@ fancy_questionary_style = Style([
     ('version', 'bold #F8E16C'),         # Version: yellow
     ('description', '#A9A9A9 italic'),   # Description: dark gray
     ('disabled', 'fg:#A9A9A9 italic'),   # Disabled: dark gray italic
-    ('note', 'fg:#96DF71')               # Note: green
+    ('note', 'fg:#96DF71'),              # Note: green
+    ('addition', 'fg:#2ECC40 bold'),     # Additions: green and bold
+    ('deletion', 'fg:#FF4136 bold'),     # Deletions: red and bold
+    ('file', 'bold #E0E0E0'),            # File name: light gray bold
+    ("parenthesis", "#A9A9A9"),           # Parentheses: dark gray
+    ("count", "bold")                     # For bold file counts in menus
 ])
 
 from .config import logger, MODEL_CACHE, MODEL, DEFAULT_MODEL
@@ -56,47 +60,62 @@ def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
     """
     Enhanced UI prompt for the main menu with questionary + custom style.
     Uses Git-themed colors and highlights 'Generate Commit' if staged changes exist.
+    Always shows "Generate Commit" first when available, with colored additions and deletions.
+    Additions are consistently shown in green (+) and deletions in red (-) for better visibility.
     """
     # Check for staged changes to highlight 'Generate Commit'
     _, _, staged_changes, unstaged_changes = get_status()
     styled_choices = []
+    commit_option = None
     default_choice = None
 
-    for c in choices:
-        # Highlight the generate commit option if staged changes exist
+    # First identify and separate out the Generate Commit option
+    for i, c in enumerate(choices):
         if isinstance(c, str) and ("Generate Commit" in c or "Generate Commit for Staged Changes" in c):
-            if staged_changes:
-                # Add a special marker for styled commit option
-                styled_choices.append(
-                    questionary.Choice(
-                        title=f"🌟 {c}", # Style will be handled by 'highlighted' in fancy_questionary_style
-                        value=c
-                    )
-                )
-                default_choice = c
-            else: # Corresponds to `if staged_changes:`
-                styled_choices.append(c)
-        # Add visual emphasis to Stage Files option if there are unstaged changes
-        elif isinstance(c, str) and c.startswith("Stage Files") and unstaged_changes:
-            # Strip rich format tags for display in questionary
-            clean_option = re.sub(r'\[.*?\]', '', c)
+            commit_option = c
+            break
+    
+    # Add the generate commit option first if it exists
+    if commit_option and staged_changes:
+        styled_choices.append(
+            questionary.Choice(
+                title=f"🌟 {commit_option}", # Style will be handled by 'highlighted' in fancy_questionary_style
+                value=commit_option
+            )
+        )
+        default_choice = commit_option
+    
+    # Then process all other options    
+    for c in choices:
+        # Skip the Generate Commit option since we already handled it
+        if isinstance(c, str) and ("Generate Commit" in c or "Generate Commit for Staged Changes" in c):
+            # Already handled above
+            continue
+
+        # Regex to parse "↓ Unstage Files (2) (+226, -59)"
+        # Format: Arrow ActionText (Count) (+Additions, -Deletions)
+        menu_item_match = re.match(r"^(↑|↓) (Unstage Files|Stage Files) \((\d+)\) \(\+(\d+), -(\d+)\)$", c)
+
+        if menu_item_match:
+            arrow, action_base, count_val, additions_val, deletions_val = menu_item_match.groups()
+                
             styled_choices.append(
                 questionary.Choice(
-                    title=f"↑ {clean_option}",
-                    value=c
+                    title=[
+                        ("", f"{arrow} {action_base} "),       # e.g., "↓ Unstage Files "
+                        ("class:parenthesis", "("),
+                        ("class:count", count_val),            # e.g., "2" (bold)
+                        ("class:parenthesis", ") "),           # ") "
+                        ("class:parenthesis", "("),
+                        ("class:addition", f"+{additions_val}"),
+                        ("class:parenthesis", ", "),
+                        ("class:deletion", f"-{deletions_val}"),
+                        ("class:parenthesis", ")")
+                    ],
+                    value=c # The original string value is used for action dispatching
                 )
             )
-        # Add visual emphasis to Unstage Files option if there are staged changes
-        elif isinstance(c, str) and c.startswith("Unstage Files") and staged_changes:
-            # Strip rich format tags for display in questionary
-            clean_option = re.sub(r'\[.*?\]', '', c)
-            styled_choices.append(
-                questionary.Choice(
-                    title=f"↓ {clean_option}",
-                    value=c
-                )
-            )
-        else: # Corresponds to `if isinstance(c, str) and ...`
+        else: # Corresponds to other menu items or if regex doesn't match
             styled_choices.append(c)
 
     return questionary.select(
@@ -119,6 +138,7 @@ def get_menu_options(
 
     Enhanced so that when there are no changes at all (staged or unstaged),
     it omits "Stage Files", "Unstage Files", and "Review Changes" from the menu.
+    Always puts "Generate Commit" first when staged changes exist.
     """
     from .git_utils import get_repo_name
 
@@ -146,20 +166,20 @@ def get_menu_options(
     has_staged = bool(staged_changes)
     has_unstaged = bool(unstaged_changes)
 
-    # 1. If we have unstaged changes, show Stage Files at the top with additions/deletions count
-    if has_unstaged:
-        unstaged_additions = sum(ch["additions"] for ch in unstaged_changes)
-        unstaged_deletions = sum(ch["deletions"] for ch in unstaged_changes)
-        dynamic_choices.append(f"Stage Files ({len(unstaged_changes)}) [green]+{unstaged_additions}[/green], [red]-{unstaged_deletions}[/red]")
-    
-    # 2. If we have staged changes
+    # Always put Generate Commit first if we have staged changes
     if has_staged:
         staged_additions = sum(ch["additions"] for ch in staged_changes)
         staged_deletions = sum(ch["deletions"] for ch in staged_changes)
-        dynamic_choices.append(f"Unstage Files ({len(staged_changes)}) [green]+{staged_additions}[/green], [red]-{staged_deletions}[/red]")
         dynamic_choices.append(f"Generate Commit for Staged Changes ({len(staged_changes)})")
+        dynamic_choices.append(f"↓ Unstage Files ({len(staged_changes)}) (+{staged_additions}, -{staged_deletions})")
 
-    # 3. If we have either staged or unstaged changes, user might still want to "Review Changes"
+    # Next, show Stage Files with additions/deletions count if we have unstaged changes
+    if has_unstaged:
+        unstaged_additions = sum(ch["additions"] for ch in unstaged_changes)
+        unstaged_deletions = sum(ch["deletions"] for ch in unstaged_changes)
+        dynamic_choices.append(f"↑ Stage Files ({len(unstaged_changes)}) (+{unstaged_additions}, -{unstaged_deletions})")
+
+    # Finally, add Review Changes if we have any changes
     if has_staged or has_unstaged:
         dynamic_choices.append("Review Changes")
 
@@ -173,8 +193,8 @@ def get_menu_options(
     else:
         repo_status = "[green]✔[/] [bold black on green] All changes are up to date[/]"
 
-    # Display totals in the status message
-    repo_status += f"\n[bold white]{repo_name} ({MODEL})[/bold white] [green]+{total_additions}[/green], [red]-{total_deletions}[/red]"
+    # Display totals in the status message with consistent styling
+    repo_status += f"\n[bold white]{repo_name} ({MODEL})[/bold white] [dim]([/dim][bold bright_green]+{total_additions}[/bold bright_green][dim], [/dim][bold bright_red]-{total_deletions}[/bold bright_red][dim])[/dim]"
 
     title = "Select an action:"
     # Combine any dynamic choices with the always-available base ones
@@ -185,19 +205,34 @@ def get_menu_options(
 def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
     """
     Let the user pick files to stage or unstage from a checkbox list.
+    Shows file names with colored additions (green) and deletions (red).
     """
     if not changes:
         return f"No {action}d changes found."
 
-    choices = [f"{c['file']} (+{c['additions']}/-{c['deletions']})" for c in changes]
+    choices = []
+    for c in changes:
+        choice = questionary.Choice(
+            title=[
+                ("class:file", f"{c['file']} "),
+                ("class:parenthesis", "("),
+                ("class:addition", f"+{c['additions']}"),
+                ("class:parenthesis", ", "),
+                ("class:deletion", f"-{c['deletions']}"),
+                ("class:parenthesis", ")")
+            ],
+            value=c['file']
+        )
+        choices.append(choice)
+
     selected_files = questionary.checkbox(
         f"Select files to {action}:",
         choices=choices,
-        style=configure_questionary_style()
+        style=fancy_questionary_style # Use fancy_questionary_style for consistency
     ).unsafe_ask()
 
     if selected_files:
-        files = [f.split()[0] for f in selected_files]
+        files = selected_files
         if action == "stage":
             result = stage_files(files)
         else:
@@ -240,7 +275,7 @@ def display_diff_panel(
     changes = next((ch for ch in file_changes if ch["file"] == filename), {})
     additions = changes.get("additions", 0)
     deletions = changes.get("deletions", 0)
-    footer = f"[bold green]+{additions}[/], [bold red]-{deletions}[/]"
+    footer = f"[dim]([/dim][bold bright_green]+{additions}[/][dim], [/dim][bold bright_red]-{deletions}[/][dim])[/dim]"
 
     panel = Padding(
         Panel(
@@ -277,8 +312,8 @@ def get_diff_summary_panel(
         box=None
     )
     table.add_column("File", justify="left", style="bold white", no_wrap=True)
-    table.add_column("Additions", justify="right", style="green")
-    table.add_column("Deletions", justify="right", style="red")
+    table.add_column("Additions", justify="right", style="bold bright_green")
+    table.add_column("Deletions", justify="right", style="bold bright_red")
 
     for ch in file_changes:
         table.add_row(ch["file"], f"+{ch['additions']}", f"-{ch['deletions']}")
@@ -420,6 +455,7 @@ def handle_review_changes(
 ):
     """
     Let the user select files from both staged & unstaged sets to see diffs individually.
+    Shows files with colored additions and deletions statistics.
     """
     import questionary
 
@@ -431,15 +467,36 @@ def handle_review_changes(
         console.print("[bold yellow]No changes to review.[/bold yellow]")
         return
 
+    # Create a dict to lookup file stats
+    file_stats = {}
+    for ch in staged_changes + unstaged_changes:
+        file_stats[ch["file"]] = (ch["additions"], ch["deletions"])
+
     choices = []
     for file in sorted(all_files):
-        label = f"{file} [Staged]" if file in staged_files else file
-        choices.append(questionary.Choice(title=label, value=file, checked=(file in staged_files)))
+        additions, deletions = file_stats.get(file, (0, 0))
+        is_staged = file in staged_files
+
+        title_parts = [
+            ("class:file", f"{file}"),
+            ("", " [Staged] " if is_staged else " "),
+            ("class:parenthesis", "("),
+            ("class:addition", f"+{additions}"),
+            ("class:parenthesis", ", "),
+            ("class:deletion", f"-{deletions}"),
+            ("class:parenthesis", ")")
+        ]
+
+        choices.append(questionary.Choice(
+            title=title_parts,
+            value=file,
+            checked=is_staged
+        ))
 
     selected_files = questionary.checkbox(
         "Select files to review their diffs:",
         choices=choices,
-        style=configure_questionary_style(),
+        style=fancy_questionary_style, # Use fancy_questionary_style for consistency
         instruction="(Use space to select, Enter to confirm)"
     ).unsafe_ask()
 
@@ -473,16 +530,16 @@ def get_diff_summary_table(file_changes: List[Dict[str, Any]], color: str):
         # Show "No changes" row
         table.add_row(
             Padding("No changes", (0, 2)),
-            Padding("+0", (0, 2)),
-            Padding("-0", (0, 2))
+            Padding("[dim]([/dim][bright_green]+0[/][dim])[/dim]", (0, 2)),
+            Padding("[dim]([/dim][bright_red]-0[/][dim])[/dim]", (0, 2))
         )
         return table
 
     for ch in file_changes:
         table.add_row(
             Padding(ch["file"], (0, 2)),
-            Padding(f"+{ch['additions']}", (0, 2)),
-            Padding(f"-{ch['deletions']}", (0, 2))
+            Padding(f"[dim]([/dim][bright_green]+{ch['additions']}[/][dim])[/dim]", (0, 2)),
+            Padding(f"[dim]([/dim][bright_red]-{ch['deletions']}[/][dim])[/dim]", (0, 2))
         )
     return table
 
@@ -499,7 +556,7 @@ def display_status(
     """
     from rich.panel import Panel
     from rich.padding import Padding
-    
+
     # Unstaged Panel - always show first
     if unstaged:
         if unstaged_changes:
@@ -509,7 +566,7 @@ def display_status(
             unstaged_panel = Panel(
                 Padding(unstaged_table,(1,2)),
                 title_align="left",
-                title=f"[bold white on red]Unstaged Changes (+{unstaged_additions}, -{unstaged_deletions})[/]",
+                title=f"[bold white on red]Unstaged Changes [dim]([/dim][bold white]+{unstaged_additions}[/bold white][dim], [/dim][bold white]-{unstaged_deletions}[/bold white][dim])[/dim][/]",
                 border_style="red",
                 width=50,
                 expand=True
@@ -526,7 +583,7 @@ def display_status(
         staged_panel = Panel(
             Padding(staged_table,(1,2)),
             title_align="left",
-            title=f"[bold black on green]Staged Changes (+{staged_additions}, -{staged_deletions})[/]",
+            title=f"[bold black on green]Staged Changes [dim]([/dim][bold white]+{staged_additions}[/bold white][dim], [/dim][bold white]-{staged_deletions}[/bold white][dim])[/dim][/]",
             border_style="green",
             width=50,
             expand=True
@@ -669,29 +726,52 @@ def update_gitignore(selected_files: List[str]):
 def handle_ignore_files():
     """
     Provide an option for selecting files or entering custom patterns to ignore.
+    Shows files with their file extension highlighted.
     """
     import questionary
+    import os
+
     ignored_files = load_gitignore()
     all_files = get_tracked_files()
 
-    choices = [questionary.Choice(file, checked=(file in ignored_files)) for file in all_files]
+    choices = []
+    for file in all_files:
+        # Highlight file extensions differently
+        filename, ext = os.path.splitext(file)
+        if ext:
+            title_parts = [
+                ("class:file", filename),
+                ("class:note", ext)
+            ]
+        else:
+            title_parts = [("class:file", file)]
+
+        choices.append(questionary.Choice(title=title_parts, value=file, checked=(file in ignored_files)))
 
     action = questionary.select(
         "Would you like to select files to ignore or enter custom patterns?",
-        choices=["Select files", "Enter custom patterns"]
+        choices=["Select files", "Enter custom patterns"],
+        style=configure_questionary_style()
     ).unsafe_ask()
 
     if action == "Select files":
-        selected_files = questionary.checkbox("Select files to ignore:", choices=choices).unsafe_ask()
+        selected_files = questionary.checkbox(
+            "Select files to ignore:",
+            choices=choices,
+            style=configure_questionary_style()
+        ).unsafe_ask()
     else:
-        custom_patterns = questionary.text("Enter custom patterns to ignore (comma-separated):").unsafe_ask()
+        custom_patterns = questionary.text(
+            "Enter custom patterns to ignore (comma-separated):",
+            style=configure_questionary_style()
+        ).unsafe_ask()
         selected_files = [pattern.strip() for pattern in custom_patterns.split(",")]
 
     if selected_files:
         update_gitignore(selected_files)
-        console.print("[bold green]Updated .gitignore file with selected files/patterns.[/bold green]")
+        console.print(f"[bold green]Successfully updated .gitignore with {len(selected_files)} entries.[/bold green]")
     else:
-        console.print("[bold yellow]No files or patterns selected to ignore.[/bold yellow]")
+        console.print("[bold yellow]No files were selected. .gitignore was not updated.[/bold yellow]")
 
 def get_tracked_files() -> List[str]:
     import subprocess
@@ -719,10 +799,13 @@ def handle_push_repo() -> List[str]:
     for remote in selected_remotes:
         confirmation_message += f"- {remote} ({remotes[remote]})\n"
 
-    confirm = questionary.confirm(confirmation_message).ask()
+    confirm = questionary.confirm(
+        confirmation_message,
+        style=configure_questionary_style()
+    ).ask()
     if not confirm:
         console.print("[bold yellow]Push action canceled by the user.[/bold yellow]")
-        return ["Push action canceled by the user."]
+        return "Push action canceled by the user."
 
     status_messages = []
     for remote in selected_remotes:
@@ -782,6 +865,7 @@ def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
             table.add_row(commit["hash"], commit["message"])
 
         console.print(Panel(table, style="", border_style="black", padding=(1, 2)))
+        console.print("\n")
         return parsed_commits
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to get commit history: {e}")
@@ -791,12 +875,38 @@ def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
 def select_commit(commits: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
     Let user pick a commit from a displayed summary.
+    Shows commit with hash, message, and colored additions/deletions.
     """
     import questionary
-    choices = [questionary.Choice(f"{c['hash']} {c['message']}", value=c) for c in commits]
+
+    choices = []
+    for c in commits:
+        # Get additions and deletions if available, default to 0
+        additions = c.get("additions", 0)
+        deletions = c.get("deletions", 0)
+
+        if additions > 0 or deletions > 0:
+            title_parts = [
+                ("", f"{c['hash']} "),
+                ("", f"{c['message']} "),
+                ("class:parenthesis", "("),
+                ("class:addition", f"+{additions}"),
+                ("class:parenthesis", ", "),
+                ("class:deletion", f"-{deletions}"),
+                ("class:parenthesis", ")")
+            ]
+        else:
+            title_parts = [
+                ("", f"{c['hash']} "),
+                ("", f"{c['message']}")
+            ]
+
+        choices.append(questionary.Choice(title=title_parts, value=c))
+
     selected_commit = questionary.select(
         "Select a commit to view details:",
-        choices=choices
+        choices=choices,
+        style=fancy_questionary_style # Use fancy_questionary_style for consistency
     ).unsafe_ask()
     return selected_commit
 
@@ -829,13 +939,33 @@ def summarize_selected_commits():
         console.print("[bold yellow]No commits available to summarize.[/bold yellow]")
         return
 
-    commit_choices = [
-        questionary.Choice(f"{c['hash']} {c['message']}", value=c) for c in commits
-    ]
+    commit_choices = []
+    for c in commits:
+        # Get additions and deletions if available, default to 0
+        additions = c.get("additions", 0)
+        deletions = c.get("deletions", 0)
+
+        if additions > 0 or deletions > 0:
+            title_parts = [
+                ("", f"{c['hash']} "),
+                ("", f"{c['message']} "),
+                ("class:parenthesis", "("),
+                ("class:addition", f"+{additions}"),
+                ("class:parenthesis", ", "),
+                ("class:deletion", f"-{deletions}"),
+                ("class:parenthesis", ")")
+            ]
+        else:
+            title_parts = [
+                ("", f"{c['hash']} "),
+                ("", f"{c['message']}")
+            ]
+
+        commit_choices.append(questionary.Choice(title=title_parts, value=c))
     selected_commits = questionary.checkbox(
         "Select commits to summarize:",
         choices=commit_choices,
-        style=configure_questionary_style(),
+        style=fancy_questionary_style, # Use fancy_questionary_style for consistency
         instruction="(Use space to select, Enter to confirm)"
     ).unsafe_ask()
 
