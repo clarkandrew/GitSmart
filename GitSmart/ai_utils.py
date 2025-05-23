@@ -174,7 +174,7 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
                 return ""
 
         try:
-            with console.status("[bold green]Analyzing changes to staged files...[/bold green]") as status:
+            with console.status("[bold green]Waiting for response...[/bold green]") as status:
                 prepend_msg = f"> Analyzing changes to staged files with {clean_model_name(MODEL)} ({request_tokens} tokens)"
                 status.update(prepend_msg)
                 # Stream the commit message from the LLM provider using the new helper.

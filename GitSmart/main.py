@@ -72,12 +72,12 @@ def main(reload: bool = False):
                     reset_console()
                     handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
 
-                elif action == "Stage Files":
+                elif action.startswith("Stage Files"):
                     status_msg = handle_stage_files(unstaged_changes)
                     reset_console()
                     console.print(status_msg)
 
-                elif action == "Unstage Files":
+                elif action.startswith("Unstage Files"):
                     status_msg = handle_unstage_files(staged_changes)
                     reset_console()
                     console.print(status_msg)

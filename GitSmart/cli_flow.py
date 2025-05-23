@@ -50,13 +50,15 @@ cli_flow.py
 - If none, show 'No changes' row
 """
 
+import re
+
 def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
     """
     Enhanced UI prompt for the main menu with questionary + custom style.
     Uses Git-themed colors and highlights 'Generate Commit' if staged changes exist.
     """
     # Check for staged changes to highlight 'Generate Commit'
-    _, _, staged_changes, _ = get_status()
+    _, _, staged_changes, unstaged_changes = get_status()
     styled_choices = []
     default_choice = None
 
@@ -74,6 +76,26 @@ def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
                 default_choice = c
             else: # Corresponds to `if staged_changes:`
                 styled_choices.append(c)
+        # Add visual emphasis to Stage Files option if there are unstaged changes
+        elif isinstance(c, str) and c.startswith("Stage Files") and unstaged_changes:
+            # Strip rich format tags for display in questionary
+            clean_option = re.sub(r'\[.*?\]', '', c)
+            styled_choices.append(
+                questionary.Choice(
+                    title=f"↑ {clean_option}",
+                    value=c
+                )
+            )
+        # Add visual emphasis to Unstage Files option if there are staged changes
+        elif isinstance(c, str) and c.startswith("Unstage Files") and staged_changes:
+            # Strip rich format tags for display in questionary
+            clean_option = re.sub(r'\[.*?\]', '', c)
+            styled_choices.append(
+                questionary.Choice(
+                    title=f"↓ {clean_option}",
+                    value=c
+                )
+            )
         else: # Corresponds to `if isinstance(c, str) and ...`
             styled_choices.append(c)
 
@@ -124,14 +146,18 @@ def get_menu_options(
     has_staged = bool(staged_changes)
     has_unstaged = bool(unstaged_changes)
 
-    # 1. If we have staged changes
-    if has_staged:
-        dynamic_choices.append("Unstage Files")
-        dynamic_choices.append(f"Generate Commit for Staged Changes ({len(staged_changes)})")
-
-    # 2. If we have unstaged changes
+    # 1. If we have unstaged changes, show Stage Files at the top with additions/deletions count
     if has_unstaged:
-        dynamic_choices.append("Stage Files")
+        unstaged_additions = sum(ch["additions"] for ch in unstaged_changes)
+        unstaged_deletions = sum(ch["deletions"] for ch in unstaged_changes)
+        dynamic_choices.append(f"Stage Files ({len(unstaged_changes)}) [green]+{unstaged_additions}[/green], [red]-{unstaged_deletions}[/red]")
+    
+    # 2. If we have staged changes
+    if has_staged:
+        staged_additions = sum(ch["additions"] for ch in staged_changes)
+        staged_deletions = sum(ch["deletions"] for ch in staged_changes)
+        dynamic_choices.append(f"Unstage Files ({len(staged_changes)}) [green]+{staged_additions}[/green], [red]-{staged_deletions}[/red]")
+        dynamic_choices.append(f"Generate Commit for Staged Changes ({len(staged_changes)})")
 
     # 3. If we have either staged or unstaged changes, user might still want to "Review Changes"
     if has_staged or has_unstaged:
@@ -469,34 +495,45 @@ def display_status(
     """
     Always display both 'Unstaged Changes' and 'Staged Changes' panels.
     If one set is empty, show 'No changes +0 -0' row to keep +/- columns consistent.
+    Display unstaged changes first, then staged changes.
     """
     from rich.panel import Panel
     from rich.padding import Padding
-    # Unstaged Panel
-    if unstaged and unstaged_changes:
-        unstaged_table = get_diff_summary_table(unstaged_changes, "red")
-        unstaged_panel = Panel(
-            Padding(unstaged_table,(1,2)),
-            title_align="left",
-            title="[bold white on red]Unstaged Changes[/]",
-            border_style="red",
-            width=50,
-            expand=True
-        )
-        console.print(unstaged_panel)
+    
+    # Unstaged Panel - always show first
+    if unstaged:
+        if unstaged_changes:
+            unstaged_additions = sum(ch["additions"] for ch in unstaged_changes)
+            unstaged_deletions = sum(ch["deletions"] for ch in unstaged_changes)
+            unstaged_table = get_diff_summary_table(unstaged_changes, "red")
+            unstaged_panel = Panel(
+                Padding(unstaged_table,(1,2)),
+                title_align="left",
+                title=f"[bold white on red]Unstaged Changes (+{unstaged_additions}, -{unstaged_deletions})[/]",
+                border_style="red",
+                width=50,
+                expand=True
+            )
+            console.print(unstaged_panel)
+        else:
+            console.print("[dim]No unstaged changes[/dim]")
 
-    # Staged Panel
+    # Staged Panel - show after unstaged
     if staged and staged_changes:
+        staged_additions = sum(ch["additions"] for ch in staged_changes)
+        staged_deletions = sum(ch["deletions"] for ch in staged_changes)
         staged_table = get_diff_summary_table(staged_changes, "green")
         staged_panel = Panel(
             Padding(staged_table,(1,2)),
             title_align="left",
-            title="[bold black on green]Staged Changes[/]",
+            title=f"[bold black on green]Staged Changes (+{staged_additions}, -{staged_deletions})[/]",
             border_style="green",
             width=50,
             expand=True
         )
         console.print(staged_panel)
+    elif staged:
+        console.print("[dim]No staged changes[/dim]")
 
 def get_status() -> Tuple[str, str, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
