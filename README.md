@@ -1,51 +1,70 @@
-<h1 align="center"><strong>GitSmart</strong></h1>
-<h2 align="center"><em>The AI-Powered Git Commit Assistant</em></h2>
-
-<div align="center">
-  <img src="assets/no-bg.png" alt="GitSmart Overview Image">
-</div>
+<h1 align="center">GitSmart</h1>
+<h3 align="center">The AI-Powered Git Commit Assistant</h3>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
-  <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
-  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version">
+  <img src="assets/no-bg.png" alt="GitSmart Logo" width="200">
 </p>
 
----
+<p align="center">
+  <a href="#-installation"><img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status"></a>
+  <a href="#-version-history-and-changelog"><img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
+  <a href="#"><img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage"></a>
+</p>
+
+## 📋 Table of Contents
+
+- [What is GitSmart?](#what-is-gitsmart)
+  - [Why You Need GitSmart](#why-you-need-gitsmart)
+  - [Before and After GitSmart](#before-and-after-gitsmart)
+- [🚀 Key Features](#-key-features)
+- [🎬 Demo](#-demo)
+- [🛠️ How It Works](#️-how-it-works)
+- [📥 Installation](#-installation)
+  - [Quick Setup (Recommended)](#quick-setup-recommended)
+  - [Manual Installation](#manual-installation)
+- [🔧 Usage](#-usage)
+- [🗺️ Roadmap](#️-roadmap)
+- [⚙️ Technical Details](#️-technical-details)
+  - [System Requirements](#system-requirements)
+  - [Performance Optimization](#performance-optimization)
+- [🤝 Contributing](#-contributing)
+  - [Code Standards](#code-standards)
+- [📝 Version History and Changelog](#-version-history-and-changelog)
+- [📄 License](#-license)
+- [📚 Glossary](#-glossary)
+
+## What is GitSmart?
 
 **GitSmart** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **GitSmart** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
-<div align="center">
-  <img src="assets/cc.png" alt="GitSmart Overview Image">
-</div>
+### Why You Need GitSmart
 
----
+- **💻 Save Time**: Automatically generate precise commit messages, reducing manual effort.
+- **🧩 Maintain Consistency**: Ensure a clean, standardized, and organized commit history.
+- **🔄 Improve Workflow**: Simplify your Git process with an intuitive and interactive CLI.
+- **👥 Enhance Collaboration**: Produce commit messages that accurately reflect changes, improving code reviews.
+- **🤖 Custom AI Integration**: Choose from leading language models like OpenAI, Anthropic, or Llama for tailored AI assistance that adapts to your coding style.
 
-## Why You'd Need GitSmart
+### Before and After GitSmart
 
-#### **Streamlined Workflow**
+**Before:**
 
-- **Automated Commit Messages**: Automatically generate precise commit messages, saving time and reducing manual effort.
+Your Git commit messages are a tangled mess—full of vague descriptions like "fix stuff" or "update files," making it hard to track changes and collaborate effectively.
 
-#### **Consistent Version History**
+**After:**
 
-- **Standardized Messages**: Ensure a clean and organized commit history, making it easier for project tracking, management, and debugging.
+Run **GitSmart** and enjoy the perks of AI-powered commit messages that are clear, standardized, and meaningful. Effortlessly track changes, collaborate seamlessly, and maintain a professional project history without the hassle.
 
-#### **Seamless Integration**
+<p align="center">
+  <video autoplay loop muted playsinline width="75%">
+    <source src="assets/preview.webm" type="video/webm">
+    Your browser does not support the video tag. Here is an image instead:
+    <img src="assets/cc.png" alt="GitSmart Interface Example" width="650">
+  </video>
+</p>
 
-- **User-Friendly CLI**: Simplify your Git workflow with an interactive command-line interface designed for efficiency and ease of use.
-
-#### **Enhanced Code Reviews**
-
-- **Accurate Summaries**: Produce commit messages that precisely reflect changes, enhancing code review processes and collaboration.
-
-#### **Custom AI Integration**
-
-- **Adaptive AI Insights**: Choose from leading language models like OpenAI, Anthropic, or Llama to get tailored AI assistance. This customization adapts to your coding style and preferences, significantly enhancing how you summarize and interpret code differences.
-
----
-
-## **Key Features**
+## 🚀 Key Features
 
 - **AI-Powered Commit Messages**: Automatically generate meaningful and standardized commit messages based on your code changes.
 - **Track Changes**: Maintain a detailed history of modifications to your codebase.
@@ -53,9 +72,9 @@
 - **Branch and Merge**: Experiment with new ideas without affecting the main project branch.
 - **Collaborate Seamlessly**: Work with others by merging changes and resolving conflicts efficiently.
 
----
+## 🎬 Demo
 
-## **AI-driven Chain-of-Thought Analysis for Deep Understanding of Any Change**
+See how GitSmart transforms your commit workflow with AI-driven chain-of-thought analysis for a deep understanding of any change:
 
 ```shell
 ╭─────────────────────────────────── assets/no-bg.png [Staged] ────────────────────────────────────╮
@@ -68,20 +87,9 @@
 ╰───────────────────────────────────────────── +0, -0 ─────────────────────────────────────────────╯
 ```
 
+GitSmart analyzes this change and produces:
+
 ```markdown
-**Step-by-Step Thinking:**
-
-1. **Observations**:
-   - The `README.md` file has been modified to update an image link.
-   - Specifically, the `GitSmart Overview Image` source has changed from `assets/comit.png` to `assets/no-bg.png`.
-   - A new file, `no-bg.png`, has been added to the `assets` directory.
-   - The nature of the change suggests a visual update, potentially for aesthetic or branding reasons.
-
-2. **Rationale**:
-   - Chosen Icon: 💄 (for UI improvements, as the change affects the visual aspect of the project)
-   - Theme: Update of graphical asset for potential branding or layout adjustments.
-
-<COMMIT_MESSAGE>
 💄 Update README Image Asset
 
 **WHAT:** Replaced `comit.png` with `no-bg.png` in README.md
@@ -92,12 +100,18 @@
   - `README.md`: Updated image link to reflect new asset.
   - `assets/no-bg.png`: Newly added image file, replacing the original `comit.png`.
 - **Impact:** This change modernizes the project's front-facing visuals in the README, ensuring a more engaging and up-to-date first impression for visitors.
-</COMMIT_MESSAGE>
 ```
 
----
+## 🛠️ How It Works
 
-## **Getting Started**
+GitSmart uses a sophisticated chain-of-thought analysis to understand your code changes:
+
+1.  **Analyze Changes**: Examines diffs between your working directory, staging area, and the Git repository.
+2.  **Process Context**: Leverages AI to understand the context and significance of your changes.
+3.  **Generate Message**: Creates a structured, informative, and standardized commit message.
+4.  **Commit Changes**: Handles the Git commit process with your approval, or allows you to refine the message.
+
+## 📥 Installation
 
 ### Quick Setup (Recommended)
 
@@ -113,10 +127,10 @@ bash setup.sh
 ```
 
 This script will:
-- Set up a Python virtual environment
-- Install all dependencies
-- Create a configuration file
-- Add convenient aliases (`gitsmart` and `gg`) to your shell configuration
+- Set up a Python virtual environment.
+- Install all dependencies from `requirements.txt`.
+- Create a `config.ini` file from `example.config.ini` for your API credentials.
+- Add convenient aliases (`gitsmart` and `gg`) to your shell configuration file (e.g., `.bashrc`, `.zshrc`).
 
 Follow the on-screen prompts to complete the setup.
 
@@ -165,7 +179,7 @@ Rename the example configuration file and update it with your API credentials:
 cp example.config.ini config.ini
 ```
 
-Edit `config.ini`:
+Edit `config.ini` with your preferred text editor:
 
 ```ini
 [API]
@@ -192,165 +206,109 @@ Reload your shell configuration:
 source ~/.bashrc  # or source ~/.zshrc
 ```
 
-### Running GitSmart
+## 🔧 Usage
 
 In any Git repository, you can now use:
 
 ```bash
-gitsmart  # or the shorter alias
+# Use the full command
+gitsmart
+
+# Or the shorter alias
 gg
 ```
 
-Follow the on-screen prompts to generate and commit your changes.
+Follow the on-screen prompts to:
+1. View your staged and unstaged changes.
+2. Interactively stage or unstage files.
+3. Let GitSmart generate an AI-powered commit message.
+4. Review and optionally edit the generated message.
+5. Commit your changes with the perfect message.
 
----
+<p align="center">
+  <img src="assets/bb.png" alt="GitSmart Usage Example" width="75%">
+</p>
 
-<div align="center">
-  <img src="assets/bb.png" alt="GitSmart Overview Image">
-</div>
+## 🗺️ Roadmap
 
----
+### Upcoming Features
 
-## **Version History and Changelog**
+- **1.1.0**
+  - Support for more AI service providers (e.g., Google Gemini).
+  - Customizable commit message templates and styles.
+- **1.2.0**
+  - Optional Graphical User Interface (GUI) for users who prefer it over the command line.
+  - Enhanced diff visualization with syntax highlighting and side-by-side views.
+- **Future Ideas**
+  - Integration with popular IDEs.
+  - Pre-commit hook for automated suggestions.
+
+## ⚙️ Technical Details
+
+### System Requirements
+- Python 3.7 or higher.
+- Git 2.20 or higher.
+- Internet connection for API calls to AI models.
+
+### Performance Optimization
+- **Limit Diff Size**: Stage only relevant changes to reduce processing time for the AI.
+- **Adjust AI Settings**: Modify `max_tokens` and `temperature` in `config.ini` to balance performance and output quality.
+- **Cache Responses**: (Future Feature) Implement caching if you frequently regenerate commit messages for the same changes.
+
+For more detailed technical information, installation procedures for different OS, and environment configuration, please see our [Technical Documentation](docs/TECHNICAL.md) (Coming Soon!).
+
+## 🤝 Contributing
+
+We welcome contributions from developers of all experience levels! Your help is essential for making GitSmart even better.
+
+1.  **Fork the Repository**: Click the "Fork" button at the top right of the GitHub page.
+2.  **Create a Feature Branch**: `git checkout -b feature/your-amazing-feature`
+3.  **Commit Your Changes**: `git commit -m "feat: Add some amazing feature"` (Try using GitSmart for your commits!)
+4.  **Push to Your Fork**: `git push origin feature/your-amazing-feature`
+5.  **Open a Pull Request**: Submit your pull request for review, detailing the changes you've made.
+
+Please read our [CONTRIBUTING.md](CONTRIBUTING.md) guide for more details on our development process, code review standards, and issue/PR templates.
+
+### Code Standards
+- Adhere to PEP 8 Python style guidelines.
+- Write unit tests for any new features or bug fixes.
+- Update documentation to reflect any changes.
+- Ensure your code is well-commented and readable.
+
+We also adhere to a [Code of Conduct](CODE_OF_CONDUCT.md). Please read it to understand the community standards.
+
+## 📝 Version History and Changelog
 
 ### [1.0.0] - 2023-10-01
-
 - Initial release with core features:
   - AI-powered commit message generation.
   - Interactive staging and unstaging of files.
   - Git diff visualization within the CLI.
 
 ### [0.9.0] - 2023-09-15
-
 - Beta release with basic commit generation capabilities.
 
----
+For a detailed changelog, see [CHANGELOG.md](CHANGELOG.md) (Coming Soon!).
 
-## **Release Roadmap**
-
-### Upcoming Features
-
-- **1.1.0**
-  - Support for multiple AI service providers.
-  - Customizable commit message templates.
-
-- **1.2.0**
-  - Graphical User Interface (GUI) for users who prefer not to use the command line.
-  - Enhanced diff visualization with syntax highlighting.
-
----
-
-## **Technical Implementation**
-
-### Installation Procedures for Windows, macOS, and Linux
-
-1. **Install Python and Git**
-
-   - **Python**: Download from the [official website](https://www.python.org/downloads/).
-   - **Git**: Download from the [official website](https://git-scm.com/downloads).
-
-2. **Follow the Quick Start Guide**
-
-   Proceed with cloning the repository and installing dependencies as outlined above.
-
-### Environment Configuration Requirements
-
-- **Python Packages**: Ensure all packages in `requirements.txt` are installed.
-- **API Credentials**: Valid `auth_token` and `api_url` in `config.ini`.
-- **Network Access**: Internet connection is required for API calls.
-
-### Integration Patterns and Best Practices
-
-- **Secure API Credentials**: Keep your `config.ini` file out of version control (add it to `.gitignore`).
-- **Automate with Git Hooks**: Integrate **GitSmart** into your Git workflow using pre-commit hooks.
-- **Regular Updates**: Periodically update dependencies for security and performance improvements.
-
-### Performance Optimization Guidelines
-
-- **Limit Diff Size**: Stage only relevant changes to reduce processing time.
-- **Adjust AI Settings**: Modify `max_tokens` and `temperature` in `config.ini` to balance performance and output quality.
-- **Cache Responses**: Implement caching if you frequently regenerate commit messages for the same changes.
-
----
-
-## **Community Engagement**
-
-### Contribution Workflow and Guidelines
-
-We welcome contributions from developers of all experience levels!
-
-1. **Fork the Repository**
-
-   Click the "Fork" button at the top right corner of the GitHub page.
-
-2. **Create a Feature Branch**
-
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **Commit Your Changes**
-
-   ```bash
-   git commit -m "Description of your changes"
-   ```
-
-4. **Push to Your Fork**
-
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-5. **Open a Pull Request**
-
-   Submit your pull request for review.
-
-### Code Review Standards
-
-- **Adhere to PEP 8**: Follow Python's style guidelines for clean and readable code.
-- **Write Tests**: Include unit tests for any new features or bug fixes.
-- **Update Documentation**: Ensure that any changes are reflected in the documentation.
-
-### Issue and PR Templates
-
-When creating issues or pull requests, please use the provided templates to include all necessary information.
-
-### Licensing Details
+## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
 
-### Code of Conduct
+## 📚 Glossary
 
-We are committed to fostering a welcoming community. Please read our [Code of Conduct](CODE_OF_CONDUCT.md) for more information.
-
----
-
-## **Before and After: Transforming Your Git Commits with GitSmart**
-
-**Before:**
-
-Your Git commit messages are a tangled mess—full of vague descriptions like "fix stuff" or "update files," making it hard to track changes and collaborate effectively.
-
-**After:**
-
-Run **GitSmart** and enjoy the perks of AI-powered commit messages that are clear, standardized, and meaningful. Effortlessly track changes, collaborate seamlessly, and maintain a professional project history without the hassle.
+| Term                      | Definition                                                                                             |
+| :------------------------ | :----------------------------------------------------------------------------------------------------- |
+| **AI**                    | Artificial Intelligence: Technology enabling computers to perform tasks requiring human intelligence.  |
+| **API**                   | Application Programming Interface: A set of rules allowing programs to communicate.                    |
+| **CLI**                   | Command Line Interface: A text-based interface for interacting with software.                          |
+| **Commit**                | A snapshot of changes made to files in a Git repository.                                               |
+| **Diff**                  | A display showing the differences between two versions of a file or set of files.                      |
+| **Git**                   | A distributed version control system for tracking changes and coordinating work.                       |
+| **Staging Area (Index)**  | An intermediate area where you prepare changes before committing them.                                 |
+| **Version Control System**| Software that helps manage changes to source code over time.                                           |
 
 ---
 
-## **Glossary**
+**Start transforming your Git workflow today with GitSmart. Enhance your productivity, improve collaboration, and maintain a clean project history effortlessly.**
 
-- **AI (Artificial Intelligence)**: Technology that enables computers to perform tasks that typically require human intelligence.
-- **API (Application Programming Interface)**: A set of rules that allows programs to communicate with each other.
-- **CLI (Command Line Interface)**: A text-based interface used to interact with software.
-- **Commit**: A record of changes made to files in a Git repository.
-- **Diff**: A display showing the changes between two versions of a file.
-- **Git**: A version control system for tracking changes in files and coordinating work on those files among multiple people.
-- **Staging**: The process of selecting changes to include in the next commit.
-- **Unstaging**: Removing changes from the staging area.
-- **Version Control System**: Software that helps manage changes to source code over time.
-
----
-
-**Start transforming your Git workflow today with GitSmart. Enhance your productivity, improve collaboration, and maintain a clean project history effortlessly. [Get Started Now](#getting-started).**
-
----
+[Get Started Now](#-installation) • [Report a Bug](../../issues) • [Request a Feature](../../issues)
