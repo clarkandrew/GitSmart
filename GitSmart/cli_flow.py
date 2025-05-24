@@ -30,8 +30,18 @@ fancy_questionary_style = Style([
     ("count", "bold")                     # For bold file counts in menus
 ])
 
-from .config import logger, MODEL_CACHE, MODEL, DEFAULT_MODEL
-from .ui import console, printer, create_styled_table, configure_questionary_style
+from .config import (
+    logger, MODEL_CACHE, MODEL, DEFAULT_MODEL, # Keep existing config imports
+    TOKEN_TEXT, TOKEN_ADD, TOKEN_DEL, TOKEN_HASH, TOKEN_PATH, TOKEN_DIM # Added TOKEN_*
+)
+# Note: configure_questionary_style is imported from .ui, which should re-export it from .config
+from .ui import console, printer, create_styled_table, configure_questionary_style, HIGH_CONTRAST_MODE # Added HIGH_CONTRAST_MODE
+from rich.text import Text # Added for styled footers and diff lines
+from rich.panel import Panel # Ensure Panel is imported
+from rich.align import Align # Ensure Align is imported
+# Removed rich.syntax import as it's no longer used in display_diff_panel
+# from rich.syntax import Syntax
+
 from .git_utils import (
     parse_diff,
     get_git_diff,
@@ -121,7 +131,7 @@ def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
     return questionary.select(
         title,
         choices=styled_choices,
-        style=fancy_questionary_style,
+        style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE), # Added high_contrast flag
         instruction="(Use ↑/↓ to move, Enter to select)",
         default=default_choice
     ).unsafe_ask()
@@ -228,7 +238,7 @@ def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
     selected_files = questionary.checkbox(
         f"Select files to {action}:",
         choices=choices,
-        style=fancy_questionary_style # Use fancy_questionary_style for consistency
+        style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
     ).unsafe_ask()
 
     if selected_files:
@@ -256,40 +266,55 @@ def display_diff_panel(
     panel_width: int = 100
 ):
     """
-    Show a single file's diff in a Rich Panel.
+    Show a single file's diff in a Rich Panel using themed styles for added/deleted lines.
     """
-    from rich.panel import Panel
-    from rich.syntax import Syntax
-    from rich.padding import Padding
-    from rich.align import Align
+    # Imports for Panel, Padding, Align are at the top of the file now.
+    # Text is also imported at the top.
 
     if not diff_lines:
-        diff_text = "No changes."
+        display_content = Text("No changes.", justify="center")
     else:
-        diff_text = "\n".join(diff_lines)
+        styled_diff_lines = [_style_diff_line(line) for line in diff_lines]
+        display_content = Text("\n").join(styled_diff_lines)
 
     is_staged = any(ch["file"] == filename for ch in file_changes)
-    title = f"[bold blue]{filename}[/bold blue] [{'Staged' if is_staged else 'Unstaged'}]"
-    syntax = Syntax(diff_text, "diff", theme="github-dark", line_numbers=True)
+    # Title styling will rely on the theme's default for panels or specific title style if defined
+    title = f"{filename} [{'Staged' if is_staged else 'Unstaged'}]"
 
     changes = next((ch for ch in file_changes if ch["file"] == filename), {})
     additions = changes.get("additions", 0)
     deletions = changes.get("deletions", 0)
-    footer = f"[dim]([/dim][bold bright_green]+{additions}[/][dim], [/dim][bold bright_red]-{deletions}[/][dim])[/dim]"
 
-    panel = Padding(
-        Panel(
-            Align.center(syntax),
-            title=title,
-            border_style="#0D1116",
-            style="",
-            padding=(1, 2),
-            subtitle=footer,
-            width=panel_width
-        ),
-        (1, 2)
+    footer_text = Text("(", style=TOKEN_DIM)
+    footer_text.append(f"+{additions}", style=TOKEN_ADD)
+    footer_text.append(" / ", style=TOKEN_DIM)
+    footer_text.append(f"-{deletions}", style=TOKEN_DEL)
+    footer_text.append(")", style=TOKEN_DIM)
+
+    # panel variable renamed to panel_obj to avoid conflict with Panel class
+    panel_obj = Panel(
+        Align.center(display_content), # Using the Text object with styled lines
+        title=title,
+        border_style="panel.border", # Use themed border
+        padding=(1, 2),
+        subtitle=footer_text,
+        width=panel_width
     )
-    return Align.center(panel)
+    # Wrapping the panel_obj with Padding, then Align.center
+    return Align.center(Padding(panel_obj, (1, 2)))
+
+
+def _style_diff_line(line: str) -> Text:
+    """Styles a single line of a diff output."""
+    line_text = line.rstrip("\n") 
+    t = Text(line_text)
+    if line.startswith("+"):
+        t.stylize("diff.add")
+    elif line.startswith("-"):
+        t.stylize("diff.del")
+    # else: # Default style is fine
+    #    t.stylize(TOKEN_TEXT) # Or apply a base text style if needed
+    return t
 
 def get_diff_summary_panel(
     file_changes: List[Dict[str, Any]],
@@ -390,7 +415,7 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
         action = questionary.select(
             "What would you like to do?",
             choices=["Commit", "Edit commit message", "Retry", "Cancel"],
-            style=configure_questionary_style()
+            style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
         ).unsafe_ask()
 
         printer.print_divider()
@@ -407,7 +432,7 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
                 "Edit your commit message below:",
                 multiline=True,
                 default=commit_message,
-                style=configure_questionary_style()
+                style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
             ).unsafe_ask()
 
             # Show updated commit
@@ -423,7 +448,7 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
             confirm_edit = questionary.select(
                 "Use this edited commit message?",
                 choices=["Commit", "Retry", "Cancel"],
-                style=configure_questionary_style()
+                style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
             ).unsafe_ask()
 
             if confirm_edit == "Commit":
@@ -496,7 +521,7 @@ def handle_review_changes(
     selected_files = questionary.checkbox(
         "Select files to review their diffs:",
         choices=choices,
-        style=fancy_questionary_style, # Use fancy_questionary_style for consistency
+        style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE), # Added high_contrast flag
         instruction="(Use space to select, Enter to confirm)"
     ).unsafe_ask()
 
@@ -751,19 +776,19 @@ def handle_ignore_files():
     action = questionary.select(
         "Would you like to select files to ignore or enter custom patterns?",
         choices=["Select files", "Enter custom patterns"],
-        style=configure_questionary_style()
+        style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
     ).unsafe_ask()
 
     if action == "Select files":
         selected_files = questionary.checkbox(
             "Select files to ignore:",
             choices=choices,
-            style=configure_questionary_style()
+            style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
         ).unsafe_ask()
     else:
         custom_patterns = questionary.text(
             "Enter custom patterns to ignore (comma-separated):",
-            style=configure_questionary_style()
+            style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
         ).unsafe_ask()
         selected_files = [pattern.strip() for pattern in custom_patterns.split(",")]
 
@@ -801,7 +826,7 @@ def handle_push_repo() -> List[str]:
 
     confirm = questionary.confirm(
         confirmation_message,
-        style=configure_questionary_style()
+        style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
     ).ask()
     if not confirm:
         console.print("[bold yellow]Push action canceled by the user.[/bold yellow]")
@@ -906,7 +931,7 @@ def select_commit(commits: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     selected_commit = questionary.select(
         "Select a commit to view details:",
         choices=choices,
-        style=fancy_questionary_style # Use fancy_questionary_style for consistency
+        style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE) # Added high_contrast flag
     ).unsafe_ask()
     return selected_commit
 
@@ -965,7 +990,7 @@ def summarize_selected_commits():
     selected_commits = questionary.checkbox(
         "Select commits to summarize:",
         choices=commit_choices,
-        style=fancy_questionary_style, # Use fancy_questionary_style for consistency
+        style=configure_questionary_style(high_contrast=HIGH_CONTRAST_MODE), # Added high_contrast flag
         instruction="(Use space to select, Enter to confirm)"
     ).unsafe_ask()
 
