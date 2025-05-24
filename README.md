@@ -80,7 +80,9 @@
 2. **Rationale**:
    - Chosen Icon: 💄 (for UI improvements, as the change affects the visual aspect of the project)
    - Theme: Update of graphical asset for potential branding or layout adjustments.
+```
 
+```markdown
 <COMMIT_MESSAGE>
 💄 Update README Image Asset
 
@@ -110,13 +112,19 @@ cd GitSmart
 chmod +x setup.sh
 # Run the setup script
 ./setup.sh
+
+# Then run:
+gitsmart
+
+# or
+c
 ```
 
 This script will:
 - Set up a Python virtual environment
 - Install all dependencies
 - Create a configuration file
-- Add convenient aliases (`gitsmart` and `gg`) to your shell configuration
+- Add convenient aliases (`gitsmart` and `c`) to your shell configuration
 
 Follow the on-screen prompts to complete the setup.
 
@@ -178,12 +186,12 @@ temperature = 0.7
 
 #### 5. Setup Command Aliases
 
-Add convenient aliases for `gitsmart` and `gg` to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
+Add convenient aliases for `gitsmart` and `c` to your shell configuration file (e.g., `.bashrc`, `.zshrc`):
 
 ```bash
 # Add these lines to your shell configuration file
 alias gitsmart="python -m GitSmart.main"
-alias gg="python -m GitSmart.main"
+alias c="python -m GitSmart.main"
 ```
 
 Reload your shell configuration:
@@ -198,7 +206,7 @@ In any Git repository, you can now use:
 
 ```bash
 gitsmart  # or the shorter alias
-gg
+c
 ```
 
 Follow the on-screen prompts to generate and commit your changes.
