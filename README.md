@@ -1,11 +1,12 @@
-<h1 align="center"><strong>GitSmart</strong></h1>
-
+<h1 align="center">GitSmart</h1>
 
 <p align="center">
   <img src="assets/no-bg.png" alt="GitSmart Overview Image" width="30%">
 </p>
 
-<h2 align="center"><em>The AI-Powered Git Commit Assistant</em</h2>
+<p align="center">
+  <em>The AI-Powered Git Commit Assistant</em>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
@@ -19,35 +20,35 @@
   <img src="assets/demo.gif" alt="GitSmart Demo" width="100%">
 </p>
 
-GitSmart is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **GitSmart** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
+GitSmart is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing your changes, **GitSmart** generates concise and standardized commit messages—making it easier to track work and collaborate.
 
 ---
 
 ## Why You'd Need GitSmart
 
 ### Streamlined Workflow
-- **Automated Commit Messages**: Save time and reduce manual effort by generating precise commit messages automatically.
+- **Automated Commit Messages**: Save time by generating precise commit messages automatically.
 
 ### Consistent Version History
-- **Standardized Messages**: Keep a clean, organized commit history for easier tracking, management, and debugging.
+- **Standardized Messages**: Keep a clean, organized commit log for easier tracking and debugging.
 
 ### Seamless Integration
-- **User-Friendly CLI**: An interactive command-line interface designed for efficiency and ease of use.
+- **User-Friendly CLI**: An interactive interface built for efficiency and ease of use.
 
 ### Enhanced Code Reviews
-- **Accurate Summaries**: Produce commit messages that precisely reflect your changes, improving code review processes.
+- **Accurate Summaries**: Generate commit messages that reflect your changes, improving review quality.
 
 ### Custom AI Integration
-- **Adaptive AI Insights**: Choose from OpenAI, Anthropic, or Llama to tailor AI assistance to your coding style.
+- **Adaptive AI Insights**: Pick from OpenAI, Anthropic, or Llama to tailor AI assistance to your coding style.
 
 ---
 
 ## Key Features
 
-- **AI-Powered Commit Messages**
-- **Track Changes**
-- **Revert to Previous Versions**
-- **Branch and Merge**
+- **AI-Powered Commit Messages**  
+- **Track Changes**  
+- **Revert to Previous Versions**  
+- **Branch and Merge**  
 - **Collaborate Seamlessly**
 
 ---
@@ -84,7 +85,7 @@ GitSmart is an open-source Command Line Interface (CLI) tool that leverages Arti
 ```markdown
 💄 Update README Image Asset
 
-**WHAT:** Replaced `comit.png` with `no-bg.png` in README.md
+**WHAT:** Replaced `comit.png` with `no-bg.png` in README.md  
 **WHY:** Refresh project’s visual identity by updating the overview image to one without a background, enhancing UI consistency.
 
 **DETAILS:**
@@ -134,8 +135,10 @@ Follow the prompts to finish setup.
 
    ```bash
    python -m venv venv
+
    # Windows
    venv\Scripts\activate
+
    # macOS/Linux
    source venv/bin/activate
    ```
@@ -253,7 +256,8 @@ Follow the prompts to generate and commit your changes.
    ```
 4. Open a PR for review
 
-Follow PEP 8, write tests, and update docs. See [LICENSE](LICENSE) for MIT terms and [Code of Conduct](CODE_OF_CONDUCT.md).
+Follow PEP 8, write tests, and update docs.
+See [LICENSE](LICENSE) for MIT terms and [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
