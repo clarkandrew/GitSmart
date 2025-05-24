@@ -45,10 +45,10 @@ GitSmart is an open-source Command Line Interface (CLI) tool that leverages Arti
 
 ## Key Features
 
-- **AI-Powered Commit Messages**  
-- **Track Changes**  
-- **Revert to Previous Versions**  
-- **Branch and Merge**  
+- **AI-Powered Commit Messages**
+- **Track Changes**
+- **Revert to Previous Versions**
+- **Branch and Merge**
 - **Collaborate Seamlessly**
 
 ---
@@ -67,7 +67,7 @@ GitSmart is an open-source Command Line Interface (CLI) tool that leverages Arti
 ````
 
 **Step-by-Step Thinking:**
-
+```markdown
 1. **Observations**
 
    * README updated: image link changed from `assets/comit.png` to `assets/no-bg.png`
@@ -78,14 +78,13 @@ GitSmart is an open-source Command Line Interface (CLI) tool that leverages Arti
 
    * Icon: 💄 for UI improvement
    * Theme: graphical asset update for branding/layout
+```
 
-<details>
-<summary>Example Commit Message</summary>
-
+**Generated Commit**
 ```markdown
 💄 Update README Image Asset
 
-**WHAT:** Replaced `comit.png` with `no-bg.png` in README.md  
+**WHAT:** Replaced `comit.png` with `no-bg.png` in README.md
 **WHY:** Refresh project’s visual identity by updating the overview image to one without a background, enhancing UI consistency.
 
 **DETAILS:**
@@ -95,7 +94,6 @@ GitSmart is an open-source Command Line Interface (CLI) tool that leverages Arti
 - **Impact:** Modernizes the project’s front-facing visuals for a more engaging first impression.
 ```
 
-</details>
 
 ---
 
