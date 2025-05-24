@@ -15,9 +15,9 @@
 
 **GitSmart** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **GitSmart** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
-<div align="center">
-  <img src="assets/cc.png" alt="GitSmart Overview Image">
-</div>
+<p align="center">
+    <img src="assets/demo.gif" alt="GitSmart Demo" width="75%">
+</p>
 
 ---
 
@@ -107,9 +107,9 @@ You can quickly set up GitSmart using our automated installation script:
 # Clone the repository
 git clone https://github.com/clarkandrew/GitSmart.git
 cd GitSmart
-
+chmod +x setup.sh
 # Run the setup script
-bash setup.sh
+./setup.sh
 ```
 
 This script will:
