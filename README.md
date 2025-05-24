@@ -2,7 +2,7 @@
 <h2 align="center"><em>The AI-Powered Git Commit Assistant</em></h2>
 
 <div align="center">
-  <img src="assets/no-bg.png" alt="GitSmart Overview Image">
+  <img src="assets/no-bg.png" alt="GitSmart Overview Image" width="30%">
 </div>
 
 <p align="center">
@@ -16,7 +16,7 @@
 **GitSmart** is an open-source Command Line Interface (CLI) tool that leverages Artificial Intelligence (AI) to automate the creation of meaningful Git commit messages. By analyzing the changes you've made, **GitSmart** generates concise and standardized commit messages, making it easier to track changes and collaborate with others.
 
 <p align="center">
-    <img src="assets/demo.gif" alt="GitSmart Demo" width="75%">
+    <img src="assets/demo.gif" alt="GitSmart Demo" width="100%">
 </p>
 
 ---
