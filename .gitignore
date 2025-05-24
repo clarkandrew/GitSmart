@@ -9,5 +9,6 @@
 !requirements.txt
 !setup.sh
 !assets/demo.gif
+!assets/preview.webm
 **/__pycache__/**
 **/.DS_Store
