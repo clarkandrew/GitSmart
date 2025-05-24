@@ -57,11 +57,7 @@ Your Git commit messages are a tangled mess—full of vague descriptions like "f
 Run **GitSmart** and enjoy the perks of AI-powered commit messages that are clear, standardized, and meaningful. Effortlessly track changes, collaborate seamlessly, and maintain a professional project history without the hassle.
 
 <p align="center">
-  <video autoplay loop muted playsinline width="75%">
-    <source src="assets/preview.webm" type="video/webm">
-    Your browser does not support the video tag. Here is an image instead:
-    <img src="assets/cc.png" alt="GitSmart Interface Example" width="650">
-  </video>
+  <img src="assets/demo.gif" alt="GitSmart Demo" width="75%">
 </p>
 
 ## 🚀 Key Features
@@ -256,6 +252,8 @@ Follow the on-screen prompts to:
 - **Cache Responses**: (Future Feature) Implement caching if you frequently regenerate commit messages for the same changes.
 
 For more detailed technical information, installation procedures for different OS, and environment configuration, please see our [Technical Documentation](docs/TECHNICAL.md) (Coming Soon!).
+
+> **Note**: If you'd like to see the full video demo, check out our [Video Walkthrough](https://github.com/clarkandrew/GitSmart/wiki/Video-Walkthrough) in the wiki.
 
 ## 🤝 Contributing
 

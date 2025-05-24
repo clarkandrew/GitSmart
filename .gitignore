@@ -8,5 +8,6 @@
 !setup.py
 !requirements.txt
 !setup.sh
+!assets/demo.gif
 **/__pycache__/**
 **/.DS_Store
