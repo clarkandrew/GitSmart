@@ -1,10 +1,11 @@
-# GitSmart
+<h1 align="center"><strong>GitSmart</strong></h1>
+
 
 <p align="center">
   <img src="assets/no-bg.png" alt="GitSmart Overview Image" width="30%">
 </p>
 
-_The AI-Powered Git Commit Assistant_
+<h2 align="center"><em>The AI-Powered Git Commit Assistant</em</h2>
 
 <p align="center">
   <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
