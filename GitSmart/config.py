@@ -25,6 +25,8 @@ MAX_TOKENS = int(config["API"]["max_tokens"])
 TEMPERATURE = float(config["API"]["temperature"])
 USE_EMOJIS = config["PROMPTING"]["use_emojis"].lower() == "true"
 DEBUG = config["APP"]["debug"].lower() == "true"
+AUTO_REFRESH = config["APP"]["auto_refresh"].lower() == "true"
+AUTO_REFRESH_INTERVAL = int(config["APP"]["auto_refresh_interval"])
 TOKEN_INCREMENT = 3000
 
 # Initialize logger

@@ -106,7 +106,82 @@ def calculate_dynamic_max_tokens(
     dynamic_max = min(request_tokens + increment, max_tokens)
     return dynamic_max
 
-def generate_commit_message(MODEL: str, diff: str) -> str:
+def format_diff_with_codeblocks(diff: str) -> str:
+    """
+    Format diff by escaping code blocks and wrapping each file diff in unique code blocks.
+    """
+    if not diff:
+        return diff
+    
+    # Escape existing code blocks in the diff
+    escaped_diff = diff.replace("```", "\\`\\`\\`")
+    
+    # Split diff by files and wrap each in unique code blocks
+    file_pattern = re.compile(r"diff --git a/(.+?) b/(.+)")
+    lines = escaped_diff.splitlines()
+    formatted_lines = []
+    current_file_lines = []
+    file_counter = 0
+    
+    def count_additions_deletions(file_lines):
+        """Count additions and deletions in a file's diff lines."""
+        additions = 0
+        deletions = 0
+        for line in file_lines:
+            if line.startswith("+") and not line.startswith("+++"):
+                additions += 1
+            elif line.startswith("-") and not line.startswith("---"):
+                deletions += 1
+        return additions, deletions
+    
+    for line in lines:
+        match = file_pattern.match(line)
+        if match:
+            # Close previous file block if exists
+            if current_file_lines:
+                # Count additions/deletions for the previous file
+                additions, deletions = count_additions_deletions(current_file_lines)
+                # Extract filename from the first diff line of previous file
+                first_diff_line = next((line for line in current_file_lines if line.startswith("diff --git")), "")
+                if first_diff_line:
+                    prev_match = file_pattern.match(first_diff_line)
+                    if prev_match:
+                        prev_filename = prev_match.group(2)
+                        formatted_lines.append(f"### File: {prev_filename} (+{additions}, -{deletions})")
+                
+                current_file_lines.append("```")
+                formatted_lines.extend(current_file_lines)
+                current_file_lines = []
+                # Add division between files
+                formatted_lines.append("\n---\n")
+            
+            # Start new file block
+            file_counter += 1
+            current_file_lines = [f"```diff-file-{file_counter}", line]
+        else:
+            if current_file_lines:
+                current_file_lines.append(line)
+            else:
+                # Line before any file diff
+                formatted_lines.append(line)
+    
+    # Close final file block if exists
+    if current_file_lines:
+        # Count additions/deletions for the last file
+        additions, deletions = count_additions_deletions(current_file_lines)
+        # Extract filename from the first diff line
+        first_diff_line = next((line for line in current_file_lines if line.startswith("diff --git")), "")
+        if first_diff_line:
+            match = file_pattern.match(first_diff_line)
+            if match:
+                filename = match.group(2)
+                formatted_lines.append(f"### File: {filename} (+{additions}, -{deletions})")
+        current_file_lines.append("```")
+        formatted_lines.extend(current_file_lines)
+    
+    return "\n".join(formatted_lines)
+
+def generate_commit_message(MODEL: str, diff: str, custom_notes: Optional[str] = None) -> str:
     """
     Generate a commit message using an external service.
     Retries until a properly formatted commit message is received or max retries is reached.
@@ -116,12 +191,19 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
     INSTRUCT_PROMPT = SYSTEM_MESSAGE_EMOJI if USE_EMOJIS else SYSTEM_MESSAGE
     logger.debug("Entering generate_commit_message function.")
 
+    # Build user content with escaped and formatted diff, plus optional custom notes after diff
+    formatted_diff = format_diff_with_codeblocks(diff)
+    user_content = "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF(S):\n\n" + formatted_diff
+    if custom_notes:
+        user_content += "\n\n## Custom User Notes\n```\n" + custom_notes + "\n```\n"
+    user_content += (USER_MSG_APPENDIX if not USE_EMOJIS else USER_MSG_APPENDIX_EMOJI)
+    
     messages = [
         {"role": "system", "content": INSTRUCT_PROMPT},
-        {"role": "user", "content": "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF(S):\n\n" + diff + (USER_MSG_APPENDIX if not USE_EMOJIS else USER_MSG_APPENDIX_EMOJI)},
+        {"role": "user", "content": user_content},
     ]
 
-    request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + diff + USER_MSG_APPENDIX)
+    request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + user_content)
     logger.debug(f"request_tokens {request_tokens}")
 
 
@@ -136,11 +218,18 @@ def generate_commit_message(MODEL: str, diff: str) -> str:
         if request_tokens > max_tokens:
             logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\nTruncating...")
             truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, max_tokens)
+            # Rebuild user content with formatted truncated diff but preserve custom notes
+            formatted_truncated_diff = format_diff_with_codeblocks(truncated_diff)
+            truncated_user_content = "START BY CAREFULLY REVIEWING THE FOLLOWING DIFF(S):\n\n" + formatted_truncated_diff
+            if custom_notes:
+                truncated_user_content += "\n\n## Custom User Notes\n```\n" + custom_notes + "\n```\n"
+            truncated_user_content += (USER_MSG_APPENDIX if not USE_EMOJIS else USER_MSG_APPENDIX_EMOJI)
+            
             messages = [
                 {"role": "system", "content": INSTRUCT_PROMPT},
-                {"role": "user", "content": truncated_diff + USER_MSG_APPENDIX}
+                {"role": "user", "content": truncated_user_content}
             ]
-            request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_diff + USER_MSG_APPENDIX)
+            request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_user_content)
             logger.info(f"After truncation, request tokens are {request_tokens}/{max_tokens}.")
 
         if request_tokens > max_tokens:

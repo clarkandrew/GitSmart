@@ -124,7 +124,7 @@ def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
         style=fancy_questionary_style,
         instruction="(Use ↑/↓ to move, Enter to select)",
         default=default_choice
-    ).unsafe_ask()
+    ).unsafe_ask(patch_stdout=True)
 
 def get_menu_options(
     MODEL: str,
@@ -373,7 +373,26 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
         return
 
     display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
-    commit_message = generate_commit_message(MODEL, diff)
+    
+    # Prompt for custom notes
+    add_notes = questionary.text(
+        "Add custom notes to guide the commit message? (y/n, Enter to skip):",
+        style=configure_questionary_style()
+    ).unsafe_ask()
+
+    custom_notes = None
+    if add_notes and add_notes.strip().lower() == "y":
+        notes = questionary.text(
+            "Enter your custom notes (Markdown supported):",
+            multiline=True,
+            style=configure_questionary_style()
+        ).unsafe_ask()
+        if notes:
+            # Escape triple backticks
+            notes = notes.replace("```", "\\`\\`\\`")
+            custom_notes = notes
+    
+    commit_message = generate_commit_message(MODEL, diff, custom_notes=custom_notes)
 
     if commit_message:
         printer.print_divider()
