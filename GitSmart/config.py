@@ -30,8 +30,15 @@ AUTO_REFRESH_INTERVAL = int(config["APP"]["auto_refresh_interval"])
 TOKEN_INCREMENT = 3000
 
 # Initialize logger
-logging.basicConfig(
-    level=logging.DEBUG if DEBUG else logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+if DEBUG:
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+else:
+    # Disable all logging output when DEBUG is False
+    logging.basicConfig(
+        level=logging.CRITICAL,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
 logger = logging.getLogger(__name__)

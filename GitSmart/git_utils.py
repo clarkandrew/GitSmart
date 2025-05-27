@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 from math import floor, ceil
 
 from .ui import console, printer
-from .config import logger
+from .config import logger, DEBUG
 
 """
 This module houses all Git-related operations such as fetching diffs,
@@ -21,15 +21,18 @@ def run_git_command(command: List[str]) -> str:
         return f"Success: {' '.join(command)}"
     except subprocess.CalledProcessError as e:
         error_message = f"Error: {' '.join(command)}. Error: {e}"
-        logger.error(error_message)
+        if DEBUG:
+            logger.error(error_message)
         return error_message
     except FileNotFoundError as e:
         error_message = f"Error: Command not found. {' '.join(command)}. Error: {e}"
-        logger.error(error_message)
+        if DEBUG:
+            logger.error(error_message)
         return error_message
     except Exception as e:
         error_message = f"Unexpected error: {' '.join(command)}. Error: {e}"
-        logger.error(error_message)
+        if DEBUG:
+            logger.error(error_message)
         return error_message
 
 def get_git_diff(staged: bool = True) -> str:
@@ -44,7 +47,8 @@ def get_git_diff(staged: bool = True) -> str:
         logger.debug("Git diff retrieved successfully.")
         return diff
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to get {'staged' if staged else 'unstaged'} diff: {e}")
+        if DEBUG:
+            logger.error(f"Failed to get {'staged' if staged else 'unstaged'} diff: {e}")
         return ""
 
 
@@ -89,7 +93,8 @@ def get_file_diff(file: str, staged: bool = True) -> List[str]:
         diff = result.stdout.strip().split("\n")
         return diff
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to get diff for {file}: {e}")
+        if DEBUG:
+            logger.error(f"Failed to get diff for {file}: {e}")
         console.print(f"[bold red]Failed to get diff for {file}: {e}[/bold red]")
         return []
 
@@ -133,7 +138,8 @@ def get_git_remotes() -> Dict[str, str]:
         logger.debug(f"Available remotes: {remote_dict}")
         return remote_dict
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to retrieve git remotes: {e}")
+        if DEBUG:
+            logger.error(f"Failed to retrieve git remotes: {e}")
         console.print(f"[bold red]Failed to retrieve git remotes: {e}[/bold red]")
         return {}
 
@@ -146,5 +152,6 @@ def push_to_remote(remote: str, url: str) -> str:
         subprocess.run(["git", "push", remote], check=True)
         return f"Successfully pushed to {remote} ({url})."
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to push to {remote}: {e}")
+        if DEBUG:
+            logger.error(f"Failed to push to {remote}: {e}")
         return f"Failed to push to {remote}: {e}"

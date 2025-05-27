@@ -8,7 +8,7 @@ from typing import Optional
 from .ui import console, configure_questionary_style
 from .config import (
     AUTH_TOKEN, API_URL, TOKEN_INCREMENT, MODEL, MAX_TOKENS, TEMPERATURE,
-    USE_EMOJIS, logger
+    USE_EMOJIS, logger, DEBUG
 )
 from .git_utils import parse_diff
 from .ui import printer
@@ -56,7 +56,8 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
     current_tokens = count_tokens(diff)
     if current_tokens <= total_allowed_tokens:
         return diff
-    logger.info(f"Truncating diff from {current_tokens} to {total_allowed_tokens} tokens.")
+    if DEBUG:
+        logger.debug(f"Truncating diff from {current_tokens} to {total_allowed_tokens} tokens.")
     diff_lines = diff.splitlines()
     avg_tokens_per_line = current_tokens / max(len(diff_lines), 1)
     lines_to_keep = floor(total_allowed_tokens / avg_tokens_per_line)
@@ -70,10 +71,11 @@ def truncate_diff(diff: str, system_message: str, user_msg_appendix: str, max_to
         truncated_diff = diff
     final_tokens = count_tokens(system_message + truncated_diff + user_msg_appendix)
     if final_tokens > max_tokens:
-        logger.warning(
-            f"Truncated diff still exceeds max tokens ({final_tokens}/{max_tokens}). "
-            "Further truncation may be required."
-        )
+        if DEBUG:
+            logger.warning(
+                f"Truncated diff still exceeds max tokens ({final_tokens}/{max_tokens}). "
+                "Further truncation may be required."
+            )
     return truncated_diff
 
 
@@ -216,7 +218,8 @@ def generate_commit_message(MODEL: str, diff: str, custom_notes: Optional[str] =
     while retry_count < max_retries:
         logger.debug(f"attempt {retry_count}")
         if request_tokens > max_tokens:
-            logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\nTruncating...")
+            if DEBUG:
+                logger.warning(f"Request exceeds max tokens ({request_tokens}/{MAX_TOKENS})\nTruncating...")
             truncated_diff = truncate_diff(diff, INSTRUCT_PROMPT, USER_MSG_APPENDIX, max_tokens)
             # Rebuild user content with formatted truncated diff but preserve custom notes
             formatted_truncated_diff = format_diff_with_codeblocks(truncated_diff)
@@ -230,7 +233,8 @@ def generate_commit_message(MODEL: str, diff: str, custom_notes: Optional[str] =
                 {"role": "user", "content": truncated_user_content}
             ]
             request_tokens = count_tokens_in_string(INSTRUCT_PROMPT + truncated_user_content)
-            logger.info(f"After truncation, request tokens are {request_tokens}/{max_tokens}.")
+            if DEBUG:
+                logger.debug(f"After truncation, request tokens are {request_tokens}/{max_tokens}.")
 
         if request_tokens > max_tokens:
             warning_message = (
@@ -288,12 +292,14 @@ def generate_commit_message(MODEL: str, diff: str, custom_notes: Optional[str] =
                 if commit_message_text:
                     return commit_message_text
                 else:
-                    logger.error("Could not extract COMMIT_MESSAGE tags. Retrying...")
+                    if DEBUG:
+                        logger.error("Could not extract COMMIT_MESSAGE tags. Retrying...")
                     console.print(f"[bold red]Commit message format incorrect.\n\n```\n\n{commit_response}\n\n```\n\nRetrying...[/bold red]")
                     retry_count += 1
                     time.sleep(2)
         except Exception as e:
-            logger.error(f"Failed to generate commit message: {e}")
+            if DEBUG:
+                logger.error(f"Failed to generate commit message: {e}")
             console.print(f"[bold red]Failed to generate commit message: {e}[/bold red]")
             retry_count += 1
             if retry_count < max_retries:
@@ -329,14 +335,17 @@ def generate_summary(text: str) -> Optional[str]:
                 status_callback=lambda text: status.update(text)
             )
             if summary:
-                logger.info("Summary generated successfully.")
+                if DEBUG:
+                    logger.debug("Summary generated successfully.")
                 return summary
             else:
-                logger.error("Could not extract summary text.")
+                if DEBUG:
+                    logger.error("Could not extract summary text.")
                 console.print("[bold red]Summary format incorrect.[/bold red]")
                 return None
     except Exception as e:
-        logger.error(f"Failed to generate summary: {e}")
+        if DEBUG:
+            logger.error(f"Failed to generate summary: {e}")
         console.print(f"[bold red]Failed to generate summary: {e}[/bold red]")
         return None
 

@@ -30,7 +30,7 @@ fancy_questionary_style = Style([
     ("count", "bold")                     # For bold file counts in menus
 ])
 
-from .config import logger, MODEL_CACHE, MODEL, DEFAULT_MODEL
+from .config import logger, MODEL_CACHE, MODEL, DEFAULT_MODEL, DEBUG
 from .ui import console, printer, create_styled_table, configure_questionary_style
 from .git_utils import (
     parse_diff,
@@ -238,7 +238,8 @@ def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
         else:
             result = unstage_files(files)
         if "Error" in result:
-            logger.error(f"Failed to {action} files: {files}")
+            if DEBUG:
+                logger.error(f"Failed to {action} files: {files}")
         return result
 
     return f"No files selected to {action}."
@@ -375,24 +376,41 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
     display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
     
     # Prompt for custom notes
-    add_notes = questionary.text(
-        "Add custom notes to guide the commit message? (y/n, Enter to skip):",
-        style=configure_questionary_style()
-    ).unsafe_ask()
-
-    custom_notes = None
-    if add_notes and add_notes.strip().lower() == "y":
-        notes = questionary.text(
-            "Enter your custom notes (Markdown supported):",
-            multiline=True,
+    try:
+        add_notes = questionary.text(
+            "Add custom notes to guide the commit message? (y/n, Enter to skip):",
             style=configure_questionary_style()
-        ).unsafe_ask()
-        if notes:
-            # Escape triple backticks
-            notes = notes.replace("```", "\\`\\`\\`")
-            custom_notes = notes
+        ).unsafe_ask(patch_stdout=True)
+
+        custom_notes = None
+        if add_notes and add_notes.strip().lower() == "y":
+            notes = questionary.text(
+                "Enter your custom notes (Markdown supported):",
+                multiline=True,
+                style=configure_questionary_style()
+            ).unsafe_ask(patch_stdout=True)
+            if notes:
+                # Escape triple backticks
+                notes = notes.replace("```", "\\`\\`\\`")
+                custom_notes = notes
+    except KeyboardInterrupt:
+        console.print("[bold yellow]⚠️  Input interrupted by user[/bold yellow]")
+        raise KeyboardInterrupt("User interrupted input")
+    except Exception as e:
+        # Handle RefreshMenuException and other interruptions during commit generation
+        if "RefreshMenuException" in str(type(e)):
+            console.print("[bold yellow]⚠️  Auto-refresh disabled during commit generation[/bold yellow]")
+            # Continue with empty notes
+            custom_notes = None
+        else:
+            console.print(f"[bold yellow]⚠️  Input error: {e}[/bold yellow]")
+            custom_notes = None
     
-    commit_message = generate_commit_message(MODEL, diff, custom_notes=custom_notes)
+    try:
+        commit_message = generate_commit_message(MODEL, diff, custom_notes=custom_notes)
+    except KeyboardInterrupt:
+        console.print("[bold yellow]⚠️  Commit generation interrupted by user[/bold yellow]")
+        raise KeyboardInterrupt("User interrupted commit generation")
 
     if commit_message:
         printer.print_divider()
@@ -406,11 +424,23 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
         )
         printer.print_divider()
 
-        action = questionary.select(
-            "What would you like to do?",
-            choices=["Commit", "Edit commit message", "Retry", "Cancel"],
-            style=configure_questionary_style()
-        ).unsafe_ask()
+        try:
+            action = questionary.select(
+                "What would you like to do?",
+                choices=["Commit", "Edit commit message", "Retry", "Cancel"],
+                style=configure_questionary_style()
+            ).unsafe_ask(patch_stdout=True)
+        except KeyboardInterrupt:
+            console.print("[bold yellow]⚠️  Action selection interrupted by user[/bold yellow]")
+            raise KeyboardInterrupt("User interrupted action selection")
+        except Exception as e:
+            # Handle RefreshMenuException and other interruptions during commit generation
+            if "RefreshMenuException" in str(type(e)):
+                console.print("[bold yellow]⚠️  Auto-refresh disabled during commit generation[/bold yellow]")
+                action = "Cancel"  # Default to cancel if interrupted
+            else:
+                console.print(f"[bold yellow]⚠️  Selection error: {e}[/bold yellow]")
+                action = "Cancel"
 
         printer.print_divider()
 
@@ -422,12 +452,24 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
                 console.print(f"[bold red]{commit_status}[/bold red]")
 
         elif action == "Edit commit message":
-            edited_commit = questionary.text(
-                "Edit your commit message below:",
-                multiline=True,
-                default=commit_message,
-                style=configure_questionary_style()
-            ).unsafe_ask()
+            try:
+                edited_commit = questionary.text(
+                    "Edit your commit message below:",
+                    multiline=True,
+                    default=commit_message,
+                    style=configure_questionary_style()
+                ).unsafe_ask(patch_stdout=True)
+            except KeyboardInterrupt:
+                console.print("[bold yellow]⚠️  Edit interrupted by user[/bold yellow]")
+                raise KeyboardInterrupt("User interrupted edit")
+            except Exception as e:
+                # Handle RefreshMenuException and other interruptions during commit generation
+                if "RefreshMenuException" in str(type(e)):
+                    console.print("[bold yellow]⚠️  Auto-refresh disabled during commit generation[/bold yellow]")
+                    edited_commit = commit_message  # Use original commit message
+                else:
+                    console.print(f"[bold yellow]⚠️  Edit error: {e}[/bold yellow]")
+                    edited_commit = commit_message
 
             # Show updated commit
             console.print(
@@ -439,31 +481,48 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
                 ), (3, 8))
             )
 
-            confirm_edit = questionary.select(
-                "Use this edited commit message?",
-                choices=["Commit", "Retry", "Cancel"],
-                style=configure_questionary_style()
-            ).unsafe_ask()
+            try:
+                confirm_edit = questionary.select(
+                    "Use this edited commit message?",
+                    choices=["Commit", "Retry", "Cancel"],
+                    style=configure_questionary_style()
+                ).unsafe_ask(patch_stdout=True)
+            except KeyboardInterrupt:
+                console.print("[bold yellow]⚠️  Confirmation interrupted by user[/bold yellow]")
+                raise KeyboardInterrupt("User interrupted confirmation")
+            except Exception as e:
+                # Handle RefreshMenuException and other interruptions during commit generation
+                if "RefreshMenuException" in str(type(e)):
+                    console.print("[bold yellow]⚠️  Auto-refresh disabled during commit generation[/bold yellow]")
+                    confirm_edit = "Cancel"  # Default to cancel if interrupted
+                else:
+                    console.print(f"[bold yellow]⚠️  Confirmation error: {e}[/bold yellow]")
+                    confirm_edit = "Cancel"
 
             if confirm_edit == "Commit":
                 commit_status = run_git_command(["git", "commit", "-m", edited_commit])
                 return commit_status
             elif confirm_edit == "Retry":
-                logger.info("Retrying commit message generation.")
+                if DEBUG:
+                    logger.debug("Retrying commit message generation.")
                 return handle_generate_commit(MODEL, diff, staged_changes)
             else:
-                logger.info("Commit aborted by user.")
+                if DEBUG:
+                    logger.debug("Commit aborted by user.")
                 console.print("[bold yellow]Commit aborted by user.[/bold yellow]")
 
         elif action == "Retry":
-            logger.info("Retrying commit message generation.")
+            if DEBUG:
+                logger.debug("Retrying commit message generation.")
             return handle_generate_commit(MODEL, diff, staged_changes)
 
         else:
-            logger.info("Commit aborted by user.")
+            if DEBUG:
+                logger.debug("Commit aborted by user.")
             console.print("[bold yellow]Commit aborted by user.[/bold yellow]")
     else:
-        logger.error("Failed to generate a commit message.")
+        if DEBUG:
+            logger.error("Failed to generate a commit message.")
         console.print("[bold red]Failed to generate a commit message.[/bold red]")
 
 def handle_review_changes(
@@ -857,7 +916,8 @@ def parse_commit_log(log_output: str) -> List[Dict[str, Any]]:
                 "full_message": full_message
             })
         else:
-            logger.warning(f"Skipping malformed commit line: {lines[0]}")
+            if DEBUG:
+                logger.warning(f"Skipping malformed commit line: {lines[0]}")
 
     return parsed_commits
 
@@ -887,7 +947,8 @@ def display_commit_summary(num_commits: int = 20) -> List[Dict[str, Any]]:
         console.print("\n")
         return parsed_commits
     except subprocess.CalledProcessError as e:
-        logger.error(f"Failed to get commit history: {e}")
+        if DEBUG:
+            logger.error(f"Failed to get commit history: {e}")
         console.print(f"[bold red]Failed to get commit history: {e}[/bold red]")
         return []
 

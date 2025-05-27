@@ -9,7 +9,7 @@ import os
 
 
 from .config import logger, MODEL, DEBUG, MODEL_CACHE, AUTO_REFRESH, AUTO_REFRESH_INTERVAL
-from .ui import console, printer
+from .ui import console, printer, Console
 from .cli_flow import (
     get_and_display_status,
     get_status,
@@ -47,6 +47,7 @@ def main(reload: bool = False):
     last_staged_state = None
     last_unstaged_state = None
     state_lock = threading.Lock()
+    shutdown_requested = threading.Event()
 
     # Flag to track when menu needs refresh
     menu_needs_refresh = threading.Event()
@@ -58,7 +59,13 @@ def main(reload: bool = False):
 
     def _refresh_signal_handler(signum, frame):
         # When we get SIGUSR1, raise our custom exception in the main thread
-        raise RefreshMenuException()
+        # But only if auto-refresh is actually active
+        if auto_refresh_active:
+            raise RefreshMenuException()
+        else:
+            # Auto-refresh is paused (e.g., during commit generation), ignore signal
+            if DEBUG:
+                logger.debug("SIGUSR1 received but auto-refresh is paused, ignoring signal")
 
     # Register the handler BEFORE any prompt is shown
     signal.signal(signal.SIGUSR1, _refresh_signal_handler)
@@ -88,13 +95,13 @@ def main(reload: bool = False):
 
                 # Temporary debug logging to see what's happening
                 if DEBUG:
-                    logger.info(f"Auto-refresh check - Changed: {changed}")
+                    logger.debug(f"Auto-refresh check - Changed: {changed}")
                 if changed:
-                    logger.info(f"Auto-refresh check - Previous staged: {last_staged_state}")
-                    logger.info(f"Auto-refresh check - Previous unstaged: {last_unstaged_state}")
-                    logger.info(f"Auto-refresh check - Current staged: {current_staged_files}")
-                    logger.info(f"Auto-refresh check - Current unstaged: {current_unstaged_files}")
-                    logger.info(f"Auto-refresh: Repository changes detected!")
+                    logger.debug(f"Auto-refresh check - Previous staged: {last_staged_state}")
+                    logger.debug(f"Auto-refresh check - Previous unstaged: {last_unstaged_state}")
+                    logger.debug(f"Auto-refresh check - Current staged: {current_staged_files}")
+                    logger.debug(f"Auto-refresh check - Current unstaged: {current_unstaged_files}")
+                    logger.debug(f"Auto-refresh: Repository changes detected!")
 
                 if changed:
                     last_staged_state = current_staged_files
@@ -109,46 +116,64 @@ def main(reload: bool = False):
         """Background thread that monitors for git changes and sets refresh flag when detected."""
         nonlocal auto_refresh_active, menu_needs_refresh
         if DEBUG:
-            logger.info(f"Auto-refresh worker thread started (PID: {os.getpid()})")
-            logger.info(f"Initial auto_refresh_active state: {auto_refresh_active}")
-            logger.info(f"AUTO_REFRESH_INTERVAL: {AUTO_REFRESH_INTERVAL}")
+            logger.debug(f"Auto-refresh worker thread started (PID: {os.getpid()})")
+            logger.debug(f"Initial auto_refresh_active state: {auto_refresh_active}")
+            logger.debug(f"AUTO_REFRESH_INTERVAL: {AUTO_REFRESH_INTERVAL}")
 
         try:
             loop_count = 0
-            while auto_refresh_active:
+            while auto_refresh_active and not shutdown_requested.is_set():
                 loop_count += 1
                 if DEBUG:
-                    logger.info(f"Auto-refresh: Loop iteration #{loop_count}, sleeping for {AUTO_REFRESH_INTERVAL}s")
-                time.sleep(AUTO_REFRESH_INTERVAL)
+                    logger.debug(f"Auto-refresh: Loop iteration #{loop_count}, sleeping for {AUTO_REFRESH_INTERVAL}s")
+                
+                # Use shutdown_requested.wait() instead of time.sleep() for interruptible sleep
+                if shutdown_requested.wait(timeout=AUTO_REFRESH_INTERVAL):
+                    # Shutdown was requested during sleep
+                    if DEBUG:
+                        logger.debug("Auto-refresh: Shutdown requested during sleep, exiting")
+                    break
 
-                if auto_refresh_active:
+                if auto_refresh_active and not shutdown_requested.is_set():
                     try:
                         if DEBUG:
-                            logger.info("Auto-refresh: Checking for changes...")
-                        if check_for_changes():
+                            logger.debug("Auto-refresh: Checking for changes...")
+                        # Double-check auto_refresh_active state before checking for changes
+                        if auto_refresh_active and check_for_changes():
                             if DEBUG:
-                                logger.info("Auto-refresh: Repository changes detected, setting refresh flag")
+                                logger.debug("Auto-refresh: Repository changes detected, setting refresh flag")
                             # mark for refresh
                             menu_needs_refresh.set()
                             # actually break any in-flight Questionary prompt
-                            os.kill(os.getpid(), signal.SIGUSR1)
+                            try:
+                                # Triple-check auto_refresh_active before sending signal
+                                if auto_refresh_active and not shutdown_requested.is_set():
+                                    os.kill(os.getpid(), signal.SIGUSR1)
+                                elif DEBUG:
+                                    logger.debug("Auto-refresh: Signal not sent - auto_refresh deactivated or shutdown requested")
+                            except ProcessLookupError:
+                                # Process might be shutting down
+                                if DEBUG:
+                                    logger.debug("Auto-refresh: Could not send SIGUSR1, process may be shutting down")
                         else:
-                            if DEBUG:
-                                logger.info("Auto-refresh: No changes detected")
+                            if DEBUG and auto_refresh_active:
+                                logger.debug("Auto-refresh: No changes detected")
                     except Exception as e:
                         if DEBUG:
                             logger.error(f"Auto-refresh: Error during change check: {e}")
-                        # Continue running even if one check fails
+                        # Continue running even if one check fails, unless shutdown is requested
+                        if shutdown_requested.is_set():
+                            break
                 else:
                     if DEBUG:
-                        logger.info("Auto-refresh: auto_refresh_active is False, breaking loop")
+                        logger.debug("Auto-refresh: auto_refresh_active is False or shutdown requested, breaking loop")
                     break
         except Exception as e:
             if DEBUG:
                 logger.error(f"Auto-refresh worker thread crashed: {e}")
         finally:
             if DEBUG:
-                logger.info("Auto-refresh worker thread stopped")
+                logger.debug("Auto-refresh worker thread stopped")
 
     def start_auto_refresh():
         """Start the auto-refresh monitoring if enabled."""
@@ -169,19 +194,44 @@ def main(reload: bool = False):
         """Stop the auto-refresh monitoring."""
         nonlocal auto_refresh_active, refresh_thread
         if auto_refresh_active:
-            logger.info("STOPPING AUTO-REFRESH - Called from stop_auto_refresh()")
             if DEBUG:
+                logger.debug("STOPPING AUTO-REFRESH - Called from stop_auto_refresh()")
                 logger.debug("Stopping auto-refresh...")
             auto_refresh_active = False
+            shutdown_requested.set()  # Signal shutdown to all threads
             if refresh_thread:
                 try:
                     refresh_thread.join(timeout=2)
                     if refresh_thread.is_alive() and DEBUG:
                         logger.warning("Auto-refresh thread did not stop cleanly")
                 except Exception as e:
-                    logger.error(f"Error stopping auto-refresh thread: {e}")
+                    if DEBUG:
+                        logger.error(f"Error stopping auto-refresh thread: {e}")
+                    # Don't re-raise; we're shutting down anyway
+                refresh_thread = None
             if DEBUG:
                 logger.debug("Auto-refresh stopped")
+
+    class AutoRefreshSuspender:
+        """Context manager to temporarily suspend auto-refresh during critical operations."""
+        def __init__(self):
+            self.was_active = False
+        
+        def __enter__(self):
+            nonlocal auto_refresh_active
+            self.was_active = auto_refresh_active
+            if self.was_active:
+                if DEBUG:
+                    logger.debug("AUTO-REFRESH: Suspending for critical operation")
+                auto_refresh_active = False
+            return self
+        
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            nonlocal auto_refresh_active
+            if self.was_active:
+                auto_refresh_active = True
+                if DEBUG:
+                    logger.debug("AUTO-REFRESH: Resumed after critical operation")
 
     def main_menu_prompt_with_refresh(MODEL: str, title: str, choices: list, refresh_event: threading.Event):
         """
@@ -292,14 +342,23 @@ def main(reload: bool = False):
                 except KeyboardInterrupt:
                     # Handle normal Ctrl+C from user
                     exit_prompted += 1
-                    if exit_prompted >= 3:
-                        break
-                    else:
+                    if exit_prompted == 1:
                         reset_console()
                         console.print(
-                            f"[bold black on red]Press Ctrl+C {3 - exit_prompted} more time(s) to exit.[/bold black on red]",
+                            "[bold yellow]⚠️  Press Ctrl+C again to exit GitSmart[/bold yellow]",
                             justify="center"
                         )
+                        # Give user a moment to decide
+                        time.sleep(0.5)
+                        continue
+                    elif exit_prompted >= 2:
+                        reset_console()
+                        console.print("[bold red]🛑 Shutting down GitSmart...[/bold red]", justify="center")
+                        if DEBUG:
+                            logger.debug("STOPPING AUTO-REFRESH - User exit via double Ctrl+C")
+                        stop_auto_refresh()
+                        break
+                    else:
                         continue
 
 
@@ -308,54 +367,37 @@ def main(reload: bool = False):
 
                 if action.startswith("Generate Commit for Staged Changes"):
                     reset_console()
-                    status_msg = handle_generate_commit(MODEL, diff, staged_changes)
-                    # No need to refresh here; will refresh at top of loop
-                    if status_msg:
-                        console.print(status_msg)
+                    # Use context manager to safely suspend auto-refresh during commit generation
+                    with AutoRefreshSuspender():
+                        try:
+                            status_msg = handle_generate_commit(MODEL, diff, staged_changes)
+                            # No need to refresh here; will refresh at top of loop
+                            if status_msg:
+                                console.print(status_msg)
+                        except KeyboardInterrupt:
+                            reset_console()
+                            console.print("[bold yellow]⚠️  Commit generation interrupted[/bold yellow]")
+                            console.print("[dim]Returning to main menu...[/dim]")
+                            time.sleep(1)
+                    continue
 
                 elif action == "Review Changes":
                     reset_console()
                     handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
 
                 elif action.startswith("↑ Stage Files"):
-                    # Temporarily pause auto-refresh during nested prompts
-                    was_active = auto_refresh_active
-                    if was_active:
-                        logger.info("STOPPING AUTO-REFRESH - Pausing for stage files prompt")
-                        auto_refresh_active = False
-                        if DEBUG:
-                            logger.debug("Auto-refresh paused for nested prompt")
-
-                    try:
+                    # Use context manager to safely suspend auto-refresh during nested prompts
+                    with AutoRefreshSuspender():
                         status_msg = handle_stage_files(unstaged_changes)
                         reset_console()
                         console.print(status_msg)
-                    finally:
-                        # Resume auto-refresh
-                        if was_active:
-                            auto_refresh_active = True
-                            if DEBUG:
-                                logger.debug("Auto-refresh resumed after nested prompt")
 
                 elif action.startswith("↓ Unstage Files"):
-                    # Temporarily pause auto-refresh during nested prompts
-                    was_active = auto_refresh_active
-                    if was_active:
-                        logger.info("STOPPING AUTO-REFRESH - Pausing for unstage files prompt")
-                        auto_refresh_active = False
-                        if DEBUG:
-                            logger.debug("Auto-refresh paused for nested prompt")
-
-                    try:
+                    # Use context manager to safely suspend auto-refresh during nested prompts
+                    with AutoRefreshSuspender():
                         status_msg = handle_unstage_files(staged_changes)
                         reset_console()
                         console.print(status_msg)
-                    finally:
-                        # Resume auto-refresh
-                        if was_active:
-                            auto_refresh_active = True
-                            if DEBUG:
-                                logger.debug("Auto-refresh resumed after nested prompt")
 
                 elif action == "Ignore Files":
                     handle_ignore_files()
@@ -386,13 +428,16 @@ def main(reload: bool = False):
                 elif action == "Exit":
                     reset_console()
                     console.print("[bold red]Goodbye...[/bold red]")
-                    logger.info("STOPPING AUTO-REFRESH - User selected Exit")
+                    if DEBUG:
+                        logger.debug("STOPPING AUTO-REFRESH - User selected Exit")
                     stop_auto_refresh()
                     break
         except Exception as e:
-            logger.error(f"Unexpected error in main loop: {e}")
+            if DEBUG:
+                logger.error(f"Unexpected error in main loop: {e}")
             console.print(f"[bold red]Unexpected error: {e}[/bold red]")
-            logger.info("STOPPING AUTO-REFRESH - Exception in main loop")
+            if DEBUG:
+                logger.debug("STOPPING AUTO-REFRESH - Exception in main loop")
             stop_auto_refresh()
             return
 
@@ -422,16 +467,22 @@ def main(reload: bool = False):
     try:
         loop()
     except KeyboardInterrupt:
-        logger.info("STOPPING AUTO-REFRESH - KeyboardInterrupt in main()")
+        if DEBUG:
+            logger.debug("STOPPING AUTO-REFRESH - KeyboardInterrupt in main()")
         stop_auto_refresh()
-        raise
+        console.print("\n[bold red]🛑 GitSmart terminated[/bold red]")
+        sys.exit(0)
     except Exception as e:
-        logger.error(f"STOPPING AUTO-REFRESH - Exception in main(): {e}")
+        if DEBUG:
+            logger.error(f"STOPPING AUTO-REFRESH - Exception in main(): {e}")
         stop_auto_refresh()
-        raise
+        console.print(f"\n[bold red]❌ Unexpected error: {e}[/bold red]")
+        sys.exit(1)
     else:
-        logger.info("STOPPING AUTO-REFRESH - Normal exit from main()")
+        if DEBUG:
+            logger.debug("STOPPING AUTO-REFRESH - Normal exit from main()")
         stop_auto_refresh()
+        console.print("[bold green]✅ GitSmart exited cleanly[/bold green]")
 def entry_point():
     """
     Minimal wrapper for console_scripts entry point.
@@ -440,7 +491,18 @@ def entry_point():
     parser = argparse.ArgumentParser(description="Automate git commit messages with enhanced features.")
     parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")
     args = parser.parse_args()
-    main(reload=args.reload)
+    
+    # Handle top-level KeyboardInterrupt gracefully
+    try:
+        main(reload=args.reload)
+    except KeyboardInterrupt:
+        console = Console()
+        console.print("\n[bold red]🛑 GitSmart terminated by user[/bold red]")
+        sys.exit(0)
+    except Exception as e:
+        console = Console()
+        console.print(f"\n[bold red]❌ Fatal error: {e}[/bold red]")
+        sys.exit(1)
 
 if __name__ == "__main__":
 
