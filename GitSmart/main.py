@@ -28,7 +28,7 @@ from .cli_flow import (
     get_menu_options,
     main_menu_prompt
 )
-
+from .utils import chdir_to_git_root
 """
 main.py
 
@@ -37,7 +37,7 @@ main.py
 - Passes dynamic menu from get_menu_options() to main_menu_prompt
 """
 def main(reload: bool = False):
-
+    chdir_to_git_root()
     console.print("[bold cyan]# GitSmart[/bold cyan]")
     display_commit_summary(3)
 
@@ -126,7 +126,7 @@ def main(reload: bool = False):
                 loop_count += 1
                 if DEBUG:
                     logger.debug(f"Auto-refresh: Loop iteration #{loop_count}, sleeping for {AUTO_REFRESH_INTERVAL}s")
-                
+
                 # Use shutdown_requested.wait() instead of time.sleep() for interruptible sleep
                 if shutdown_requested.wait(timeout=AUTO_REFRESH_INTERVAL):
                     # Shutdown was requested during sleep
@@ -216,7 +216,7 @@ def main(reload: bool = False):
         """Context manager to temporarily suspend auto-refresh during critical operations."""
         def __init__(self):
             self.was_active = False
-        
+
         def __enter__(self):
             nonlocal auto_refresh_active
             self.was_active = auto_refresh_active
@@ -225,7 +225,7 @@ def main(reload: bool = False):
                     logger.debug("AUTO-REFRESH: Suspending for critical operation")
                 auto_refresh_active = False
             return self
-        
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             nonlocal auto_refresh_active
             if self.was_active:
@@ -491,7 +491,7 @@ def entry_point():
     parser = argparse.ArgumentParser(description="Automate git commit messages with enhanced features.")
     parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")
     args = parser.parse_args()
-    
+
     # Handle top-level KeyboardInterrupt gracefully
     try:
         main(reload=args.reload)

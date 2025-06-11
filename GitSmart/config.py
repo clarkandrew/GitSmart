@@ -2,7 +2,7 @@ import os
 import configparser
 import logging
 from diskcache import Cache
-
+from .utils import get_git_root
 # Initialize the config parser
 config = configparser.ConfigParser()
 
@@ -11,9 +11,8 @@ CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "co
 config.read(CONFIG_PATH)
 
 # Directory for persistent storage
-history_dir = ".gitsmart"
-MODEL_CACHE = Cache(f"{history_dir}/model_cache")
-
+history_dir = os.path.join(get_git_root(), ".gitsmart")
+MODEL_CACHE = Cache(os.path.join(history_dir, "model_cache"))
 # Load configurations
 AUTH_TOKEN = config["API"]["auth_token"]
 API_URL = config["API"]["api_url"]

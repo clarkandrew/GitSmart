@@ -12,6 +12,7 @@ This module houses all Git-related operations such as fetching diffs,
 staging, unstaging, commit history, etc.
 """
 
+
 def run_git_command(command: List[str]) -> str:
     """
     Run a git command and return the result or an error message.
