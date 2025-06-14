@@ -110,8 +110,13 @@ def ensure_repo_context(repo_name: Optional[str] = None):
         return repo_info
 
 @mcp.tool
-def stage_file(files: List[str], repo_name: Optional[str] = None, ctx: Context = None):
-    """Stage a file or multiple files for commit in a specific repository."""
+def stage_file(files: List[str], repo_name: str, ctx: Context = None):
+    """Stage a file or multiple files for commit in a specific repository.
+    
+    Args:
+        files: List of file paths to stage for commit
+        repo_name: Name of git repository based on parent directory name (required)
+    """
     try:
         ensure_repo_context(repo_name)
         result = stage_files(files)
@@ -120,8 +125,13 @@ def stage_file(files: List[str], repo_name: Optional[str] = None, ctx: Context =
         return {"success": False, "message": str(e)}
 
 @mcp.tool
-def unstage_file(files: List[str], repo_name: Optional[str] = None, ctx: Context = None):
-    """Unstage a file or multiple files in a specific repository."""
+def unstage_file(files: List[str], repo_name: str, ctx: Context = None):
+    """Unstage a file or multiple files in a specific repository.
+    
+    Args:
+        files: List of file paths to unstage (remove from staging area)
+        repo_name: Name of git repository based on parent directory name (required)
+    """
     try:
         ensure_repo_context(repo_name)
         result = unstage_files(files)
@@ -130,8 +140,16 @@ def unstage_file(files: List[str], repo_name: Optional[str] = None, ctx: Context
         return {"success": False, "message": str(e)}
 
 @mcp.tool
-def generate_commit_and_commit(custom_message: Optional[str] = None, repo_name: Optional[str] = None, ctx: Context = None):
-    """Generate an AI commit message and commit staged changes in a specific repository."""
+def generate_commit_and_commit(repo_name: str, custom_message: Optional[str] = None, ctx: Context = None):
+    """Generate an AI commit message and commit staged changes in a specific repository.
+    
+    Args:
+        custom_message: Custom commit message to use instead of AI-generated one (optional)
+        repo_name: Name of git repository based on parent directory name (required)
+    
+    Returns:
+        Dict with success status and commit message or error details
+    """
     try:
         ensure_repo_context(repo_name)
         if custom_message:
@@ -149,8 +167,16 @@ def generate_commit_and_commit(custom_message: Optional[str] = None, repo_name: 
         return {"success": False, "message": str(e)}
 
 @mcp.tool
-def add_files(files: List[str], repo_name: Optional[str] = None, ctx: Context = None):
-    """Add untracked files to Git repository (git add for new files)."""
+def add_files(files: List[str], repo_name: str, ctx: Context = None):
+    """Add untracked files to Git repository (git add for new files).
+    
+    Args:
+        files: List of untracked file paths to add to the repository
+        repo_name: Name of git repository based on parent directory name (required)
+    
+    Returns:
+        Dict with success status, added files, and any files that couldn't be added
+    """
     try:
         ensure_repo_context(repo_name)
         valid_files = []
@@ -201,7 +227,11 @@ def add_files(files: List[str], repo_name: Optional[str] = None, ctx: Context = 
 
 @mcp.tool
 def list_repositories(ctx: Context = None):
-    """List all registered repositories."""
+    """List all registered repositories.
+    
+    Returns:
+        Dict containing a list of all registered repository names
+    """
     try:
         repo_manager = get_repo_manager()
         repos = repo_manager.list_repositories()
@@ -211,7 +241,14 @@ def list_repositories(ctx: Context = None):
 
 @mcp.tool
 def switch_repository(repo_name: str, ctx: Context = None):
-    """Switch to a specific repository."""
+    """Switch to a specific repository.
+    
+    Args:
+        repo_name: Name of git repository based on parent directory name to switch to (required)
+    
+    Returns:
+        Dict with success status and confirmation message
+    """
     try:
         repo_manager = get_repo_manager()
         success, prev_dir = switch_to_repo(repo_name)
@@ -223,8 +260,15 @@ def switch_repository(repo_name: str, ctx: Context = None):
         return {"success": False, "message": str(e)}
 
 @mcp.tool
-def get_repository_status(repo_name: Optional[str] = None, ctx: Context = None):
-    """Get detailed status of a specific repository."""
+def get_repository_status(repo_name: str, ctx: Context = None):
+    """Get detailed status of a specific repository.
+    
+    Args:
+        repo_name: Name of git repository based on parent directory name to get status for (required)
+    
+    Returns:
+        Dict with detailed repository information including name, path, branch, and change status
+    """
     try:
         ensure_repo_context(repo_name)
         repo_manager = get_repo_manager()
