@@ -6,8 +6,8 @@ import atexit
 from pathlib import Path
 from typing import List, Optional
 from fastmcp import FastMCP, Context
-from .config import logger, MCP_PORT, MCP_HOST
-from .git_utils import stage_files, unstage_files
+from .config import logger, MCP_PORT, MCP_HOST, MODEL
+from .git_utils import stage_files, unstage_files, get_git_diff
 from .ai_utils import generate_commit_message
 from .repo_manager import get_repo_manager, get_current_repo_info, switch_to_repo, find_repo
 
@@ -117,6 +117,7 @@ def stage_file(files: List[str], repo_name: str, ctx: Context = None):
         files: List of file paths to stage for commit
         repo_name: Name of git repository based on parent directory name (required)
     """
+    logger.info(f"Tool called: stage_file with args: files={files}, repo_name={repo_name}")
     try:
         ensure_repo_context(repo_name)
         result = stage_files(files)
@@ -132,6 +133,7 @@ def unstage_file(files: List[str], repo_name: str, ctx: Context = None):
         files: List of file paths to unstage (remove from staging area)
         repo_name: Name of git repository based on parent directory name (required)
     """
+    logger.info(f"Tool called: unstage_file with args: files={files}, repo_name={repo_name}")
     try:
         ensure_repo_context(repo_name)
         result = unstage_files(files)
@@ -144,18 +146,24 @@ def generate_commit_and_commit(repo_name: str, custom_message: Optional[str] = N
     """Generate an AI commit message and commit staged changes in a specific repository.
     
     Args:
-        custom_message: Custom commit message to use instead of AI-generated one (optional)
         repo_name: Name of git repository based on parent directory name (required)
+        custom_message: Custom commit message to use instead of AI-generated one (optional)
     
     Returns:
         Dict with success status and commit message or error details
     """
+    logger.info(f"Tool called: generate_commit_and_commit with args: repo_name={repo_name}, custom_message={custom_message}")
     try:
         ensure_repo_context(repo_name)
         if custom_message:
             commit_message = custom_message
         else:
-            commit_message = generate_commit_message()
+            # Get the staged diff and generate commit message
+            diff = get_git_diff(staged=True)
+            if not diff:
+                return {"success": False, "message": "No staged changes found. Please stage some files first."}
+            commit_message = generate_commit_message(MODEL, diff)
+        
         result = subprocess.run([
             "git", "commit", "-m", commit_message
         ], capture_output=True, text=True)
@@ -177,6 +185,7 @@ def add_files(files: List[str], repo_name: str, ctx: Context = None):
     Returns:
         Dict with success status, added files, and any files that couldn't be added
     """
+    logger.info(f"Tool called: add_files with args: files={files}, repo_name={repo_name}")
     try:
         ensure_repo_context(repo_name)
         valid_files = []
@@ -232,6 +241,7 @@ def list_repositories(ctx: Context = None):
     Returns:
         Dict containing a list of all registered repository names
     """
+    logger.info("Tool called: list_repositories")
     try:
         repo_manager = get_repo_manager()
         repos = repo_manager.list_repositories()
@@ -249,6 +259,7 @@ def switch_repository(repo_name: str, ctx: Context = None):
     Returns:
         Dict with success status and confirmation message
     """
+    logger.info(f"Tool called: switch_repository with args: repo_name={repo_name}")
     try:
         repo_manager = get_repo_manager()
         success, prev_dir = switch_to_repo(repo_name)
@@ -269,6 +280,7 @@ def get_repository_status(repo_name: str, ctx: Context = None):
     Returns:
         Dict with detailed repository information including name, path, branch, and change status
     """
+    logger.info(f"Tool called: get_repository_status with args: repo_name={repo_name}")
     try:
         ensure_repo_context(repo_name)
         repo_manager = get_repo_manager()
