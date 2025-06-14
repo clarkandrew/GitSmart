@@ -32,8 +32,27 @@ from .utils import chdir_to_git_root
 from .repo_registry import get_repository_registry, ensure_repository_context
 from .repo_manager import get_repo_manager, register_current_repo
 
+# Dummy MCP state for when MCP is disabled
+class DummyMCPState:
+    """Dummy MCP state that always returns False for operation checks."""
+    def is_operation_in_progress(self) -> bool:
+        return False
+    
+    def get_current_operation(self) -> str:
+        return None
+    
+    def wait_for_operations_to_complete(self, timeout=None) -> bool:
+        return True
+
 if MCP_ENABLED:
-    from .mcp_server import mcp, start_mcp_server, is_server_running
+    try:
+        from .mcp_server import mcp, start_mcp_server, is_server_running, get_mcp_state
+    except ImportError:
+        logger.warning("MCP server module could not be imported, MCP functionality disabled")
+        MCP_ENABLED = False
+        get_mcp_state = lambda: DummyMCPState()
+else:
+    get_mcp_state = lambda: DummyMCPState()
 
 """
 main.py
@@ -289,6 +308,12 @@ def main(reload: bool = False):
         if refresh_event.is_set():
             return None  # Indicate refresh needed
 
+        # Check for MCP operations
+        mcp_state = get_mcp_state()
+        if mcp_state.is_operation_in_progress():
+            # MCP operation in progress, return special indicator
+            return "__MCP_OPERATION_IN_PROGRESS__"
+
         try:
             # If we're already flagged for a refresh, bail early
             return main_menu_prompt(MODEL, title, choices)
@@ -310,6 +335,11 @@ def main(reload: bool = False):
             while True:
                 if refresh_event.is_set():
                     return None  # Refresh needed
+                
+                # Check for MCP operations
+                mcp_state = get_mcp_state()
+                if mcp_state.is_operation_in_progress():
+                    return "__MCP_OPERATION_IN_PROGRESS__"
 
                 attempt_count += 1
                 if attempt_count > 100:  # Prevent infinite loops in non-interactive environments
@@ -349,6 +379,23 @@ def main(reload: bool = False):
         try:
             while True:
                 try:
+                    # Check for MCP operations
+                    mcp_state = get_mcp_state()
+                    if mcp_state.is_operation_in_progress():
+                        current_op = mcp_state.get_current_operation()
+                        console.print(f"[bold yellow]⏸️  CLI menu paused - MCP operation in progress: {current_op}[/bold yellow]")
+                        
+                        # Wait for MCP operation to complete with timeout
+                        if mcp_state.wait_for_operations_to_complete(timeout=0.5):
+                            console.print("[bold green]✅ MCP operation completed - resuming CLI menu[/bold green]")
+                            time.sleep(0.5)  # Brief pause to show the message
+                            reset_console()
+                            continue
+                        else:
+                            # Still in progress, continue waiting
+                            time.sleep(0.1)
+                            continue
+
                     # Check if auto-refresh is requesting a menu refresh
                     if menu_needs_refresh.is_set():
                         reset_console()
@@ -378,7 +425,15 @@ def main(reload: bool = False):
                                 console.print("[bold green]📡 Repository changes detected, refreshing menu...[/bold green]")
                                 menu_needs_refresh.clear()
                                 continue
+                            elif action == "__MCP_OPERATION_IN_PROGRESS__":
+                                # MCP operation detected, continue to top of loop for waiting
+                                continue
                         else:
+                            # Check for MCP operations even when auto-refresh is disabled
+                            mcp_state = get_mcp_state()
+                            if mcp_state.is_operation_in_progress():
+                                continue  # Jump to top of loop for MCP handling
+                            
                             action = main_menu_prompt(MODEL, title, choices)
                     except (OSError, EOFError) as e:
                         if DEBUG:
@@ -407,7 +462,6 @@ def main(reload: bool = False):
                         break
                     else:
                         continue
-
 
                 # Reset exit counter on successful action
                 exit_prompted = 0
