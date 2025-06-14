@@ -10,5 +10,10 @@
 !setup.sh
 !assets/demo.gif
 !assets/preview.webm
+!test_*.py
+!test_*.txt
+!test_*.js
+!test_*.md
+!http_test*
 **/__pycache__/**
 **/.DS_Store

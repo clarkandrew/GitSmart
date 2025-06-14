@@ -1,0 +1,19 @@
+# Simple Test File for GitSmart Add Functionality
+
+This is a simple test file created to verify that the GitSmart add files functionality works correctly.
+
+## Purpose
+- Test the `gitsmart add` CLI command
+- Test the MCP server `add_files` tool
+- Verify that untracked files can be properly added to Git
+
+## Usage
+1. This file should initially be untracked
+2. Run `gitsmart add test_simple.txt` to add it
+3. Check `git status` to verify it's staged
+
+## Content
+This file contains plain text and should not be ignored by the .gitignore rules.
+
+Date created: 2025-06-13
+Created for: GitSmart testing

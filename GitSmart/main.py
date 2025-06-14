@@ -8,7 +8,7 @@ import signal
 import os
 
 
-from .config import logger, MODEL, DEBUG, MODEL_CACHE, AUTO_REFRESH, AUTO_REFRESH_INTERVAL
+from .config import logger, MODEL, DEBUG, MODEL_CACHE, AUTO_REFRESH, AUTO_REFRESH_INTERVAL, MCP_ENABLED, MCP_HOST, MCP_PORT
 from .ui import console, printer, Console
 from .cli_flow import (
     get_and_display_status,
@@ -29,6 +29,12 @@ from .cli_flow import (
     main_menu_prompt
 )
 from .utils import chdir_to_git_root
+from .repo_registry import get_repository_registry, ensure_repository_context
+from .repo_manager import get_repo_manager, register_current_repo
+
+if MCP_ENABLED:
+    from .mcp_server import mcp, start_mcp_server, is_server_running
+
 """
 main.py
 
@@ -37,8 +43,31 @@ main.py
 - Passes dynamic menu from get_menu_options() to main_menu_prompt
 """
 def main(reload: bool = False):
-    chdir_to_git_root()
-    console.print("[bold cyan]# GitSmart[/bold cyan]")
+    # Initialize repository context
+    repo_registry = get_repository_registry()
+    repo_manager = get_repo_manager()
+
+    # Try to discover and register current repository
+    current_repo = repo_registry.discover_repository()
+    if current_repo:
+        console.print(f"[bold cyan]# GitSmart - {current_repo.name}[/bold cyan]")
+        console.print(f"[dim]Repository: {current_repo.path}[/dim]")
+    else:
+        # Try legacy git root discovery
+        try:
+            chdir_to_git_root()
+            # Register the repository we just found
+            register_current_repo()
+            repo_info = repo_manager.get_current_repository()
+            if repo_info:
+                console.print(f"[bold cyan]# GitSmart - {repo_info['name']}[/bold cyan]")
+                console.print(f"[dim]Repository: {repo_info['path']}[/dim]")
+            else:
+                console.print("[bold cyan]# GitSmart[/bold cyan]")
+        except:
+            console.print("[bold cyan]# GitSmart[/bold cyan]")
+            console.print("[bold yellow]⚠️  No Git repository found. Some features may be limited.[/bold yellow]")
+
     display_commit_summary(3)
 
     exit_prompted = 0
@@ -48,6 +77,24 @@ def main(reload: bool = False):
     last_unstaged_state = None
     state_lock = threading.Lock()
     shutdown_requested = threading.Event()
+    mcp_server_thread = None
+
+    # Start MCP server if enabled
+    if MCP_ENABLED:
+        try:
+            if is_server_running():
+                console.print(f"[bold yellow]MCP Server already running on http://{MCP_HOST}:{MCP_PORT}[/bold yellow]")
+                console.print("[dim]Available tools: stage_file, unstage_file, generate_commit_and_commit, add_files, etc.[/dim]")
+            else:
+                def run_mcp():
+                    start_mcp_server()
+                mcp_server_thread = threading.Thread(target=run_mcp, daemon=True)
+                mcp_server_thread.start()
+                console.print(f"[bold green]MCP Server started on http://{MCP_HOST}:{MCP_PORT}[/bold green]")
+                console.print("[dim]Available tools: stage_file, unstage_file, generate_commit_and_commit, add_files, etc.[/dim]")
+        except Exception as e:
+            console.print(f"[bold red]Failed to start MCP server: {e}[/bold red]")
+            logger.error(f"MCP server startup failed: {e}")
 
     # Flag to track when menu needs refresh
     menu_needs_refresh = threading.Event()
@@ -447,7 +494,6 @@ def main(reload: bool = False):
             f"[bold yellow]Auto-reload is enabled. Repository status will refresh every {refresh_interval} seconds.[/bold yellow]"
         )
 
-        import threading as reload_threading
         def auto_refresh():
             while True:
                 console.print("[bold yellow]...[/bold yellow]")
@@ -456,7 +502,7 @@ def main(reload: bool = False):
                 get_and_display_status()
                 sys.stdout.flush()
 
-        refresh_thread = reload_threading.Thread(target=auto_refresh, daemon=True)
+        refresh_thread = threading.Thread(target=auto_refresh, daemon=True)
         refresh_thread.start()
 
     if AUTO_REFRESH and not reload:
@@ -483,18 +529,136 @@ def main(reload: bool = False):
             logger.debug("STOPPING AUTO-REFRESH - Normal exit from main()")
         stop_auto_refresh()
         console.print("[bold green]✅ GitSmart exited cleanly[/bold green]")
+def cmd_add_files(args):
+    """Add untracked files to Git repository."""
+    from .git_utils import add_files
+    from .repo_manager import get_repo_manager, find_repo
+    from .ui import console
+
+    files = args.files
+    repo_name = args.repo if hasattr(args, 'repo') and args.repo else None
+
+    if not files:
+        console.print("[bold red]❌ No files specified for adding[/bold red]")
+        return
+
+    # Handle repository switching
+    original_cwd = None
+    repo_info = None
+
+    try:
+        if repo_name:
+            repo_info = find_repo(repo_name)
+            if not repo_info:
+                console.print(f"[bold red]❌ Repository '{repo_name}' not found[/bold red]")
+                return
+
+            original_cwd = os.getcwd()
+            os.chdir(repo_info["path"])
+        else:
+            # Use current repository
+            repo_manager = get_repo_manager()
+            repo_info = repo_manager.get_current_repository()
+            if repo_info:
+                repo_name = repo_info["name"]
+
+        # Check which files exist and are untracked
+        valid_files = []
+        invalid_files = []
+        already_tracked = []
+
+        for file_path in files:
+            if not os.path.exists(file_path):
+                invalid_files.append(file_path)
+                continue
+
+            # Check if file is already tracked
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["git", "ls-files", "--", file_path],
+                    capture_output=True, text=True, check=True
+                )
+                if result.stdout.strip():
+                    already_tracked.append(file_path)
+                else:
+                    valid_files.append(file_path)
+            except subprocess.CalledProcessError:
+                # If git ls-files fails, assume it's untracked
+                valid_files.append(file_path)
+
+        # Display status
+        if invalid_files:
+            console.print(f"[bold red]❌ Files not found: {', '.join(invalid_files)}[/bold red]")
+        if already_tracked:
+            console.print(f"[bold yellow]⚠️  Already tracked: {', '.join(already_tracked)}[/bold yellow]")
+
+        # Add valid untracked files
+        if valid_files:
+            try:
+                add_files(valid_files)
+                console.print(f"[bold green]✅ Successfully added: {', '.join(valid_files)}[/bold green]")
+
+                if repo_name:
+                    console.print(f"[dim]Repository: {repo_name}[/dim]")
+
+            except Exception as e:
+                console.print(f"[bold red]❌ Git add failed: {str(e)}[/bold red]")
+        else:
+            if not invalid_files and not already_tracked:
+                console.print("[bold yellow]⚠️  No valid untracked files to add[/bold yellow]")
+
+    except Exception as e:
+        logger.error(f"Error adding files: {e}")
+        console.print(f"[bold red]❌ Error adding files: {str(e)}[/bold red]")
+    finally:
+        if original_cwd:
+            os.chdir(original_cwd)
+
+
 def entry_point():
     """
     Minimal wrapper for console_scripts entry point.
     Parses command line arguments and launches the main application.
     """
-    parser = argparse.ArgumentParser(description="Automate git commit messages with enhanced features.")
-    parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")
+    parser = argparse.ArgumentParser(
+        description="Automate git commit messages with enhanced features.",
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    # Create subparsers for different commands
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # Default command (interactive mode)
+    default_parser = subparsers.add_parser('ui', help='Launch interactive UI (default)')
+    default_parser.add_argument("--reload", action="store_true", help="Enable auto-refresh of repository status.")
+    default_parser.set_defaults(func=lambda args: main(reload=args.reload))
+
+    # Add files command
+    add_parser = subparsers.add_parser('add', help='Add untracked files to Git repository')
+    add_parser.add_argument('files', nargs='+', help='Files to add to Git tracking')
+    add_parser.add_argument('--repo', '-r', help='Repository name (optional, uses current repo if not specified)')
+    add_parser.set_defaults(func=cmd_add_files)
+
+    # Repository management commands
+    from .repo_cli import create_repo_parser, handle_repo_command
+    repo_parser = create_repo_parser(subparsers)
+    repo_parser.set_defaults(func=handle_repo_command)
+
+    # Parse arguments
     args = parser.parse_args()
+
+    # If no command specified, default to interactive UI
+    if not args.command:
+        main(reload=False)
+        return
 
     # Handle top-level KeyboardInterrupt gracefully
     try:
-        main(reload=args.reload)
+        if hasattr(args, 'func'):
+            args.func(args)
+        else:
+            parser.print_help()
     except KeyboardInterrupt:
         console = Console()
         console.print("\n[bold red]🛑 GitSmart terminated by user[/bold red]")

@@ -5,3 +5,7 @@ prompt_toolkit
 pytest
 count-tokens
 diskcache
+flask
+flask-cors
+sseclient-py
+mcp

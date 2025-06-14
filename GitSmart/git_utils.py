@@ -111,6 +111,13 @@ def unstage_files(files: List[str]) -> str:
     """
     return run_git_command(["git", "reset"] + files)
 
+def add_files(files: List[str]) -> str:
+    """
+    Add untracked files to Git repository (git add).
+    This is different from stage_files as it specifically handles new/untracked files.
+    """
+    return run_git_command(["git", "add"] + files)
+
 def get_repo_name() -> str:
     """
     Retrieve the current repository's name by reading top-level directory.

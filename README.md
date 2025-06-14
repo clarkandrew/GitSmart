@@ -50,6 +50,79 @@ GitSmart is an open-source Command Line Interface (CLI) tool that leverages Arti
 - **Revert to Previous Versions**
 - **Branch and Merge**
 - **Collaborate Seamlessly**
+- **MCP Server Integration** - Real-time git operations via Server-Sent Events
+
+---
+
+## MCP Server Integration
+
+GitSmart now includes a **Model Context Protocol (MCP) server** that provides real-time git operations through Server-Sent Events (SSE). This allows external tools and applications to interact with your git repository safely and efficiently.
+
+### Quick MCP Setup
+
+1. **Enable MCP server** in your `config.ini`:
+   ```ini
+   [MCP]
+   enabled=true
+   port=8765
+   host=127.0.0.1
+   ```
+
+2. **Start GitSmart**:
+   ```bash
+   gitsmart
+   ```
+   You'll see: `MCP Server started on http://127.0.0.1:8765`
+
+3. **Available Tools**:
+   - `stage_file` - Stage files for commit
+   - `unstage_file` - Unstage files
+   - `generate_commit_and_commit` - AI commit message generation and commit
+
+### API Usage Examples
+
+**Check server status:**
+```bash
+curl http://127.0.0.1:8765/mcp/status
+```
+
+**Stage a file:**
+```bash
+curl -X POST http://127.0.0.1:8765/mcp/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "stage_file",
+      "arguments": {"files": ["README.md"]}
+    }
+  }'
+```
+
+**Generate and commit:**
+```bash
+curl -X POST http://127.0.0.1:8765/mcp/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "generate_commit_and_commit",
+      "arguments": {}
+    }
+  }'
+```
+
+### Client Examples
+
+- **Python Client**: See `examples/mcp_client_example.py`
+- **Web Client**: Open `examples/mcp_web_client.html` in your browser
+- **Full Documentation**: See `MCP_SERVER.md`
+
+The MCP server enables seamless integration with IDEs, CI/CD pipelines, and custom development tools.
 
 ---
 
@@ -196,6 +269,15 @@ Follow the prompts to generate and commit your changes.
 
 ## Version History & Changelog
 
+### \[1.1.0] – 2024-01-01
+
+* **NEW**: MCP Server Integration
+
+  * Real-time git operations via Server-Sent Events
+  * Three core tools: stage, unstage, generate & commit
+  * HTTP API with full documentation
+  * Python and web client examples
+
 ### \[1.0.0] – 2023-10-01
 
 * Initial release
@@ -212,8 +294,9 @@ Follow the prompts to generate and commit your changes.
 
 ## Release Roadmap
 
-* **1.1.0**: Multi-AI provider support & customizable templates
-* **1.2.0**: GUI & enhanced diff highlighting
+* **1.2.0**: Multi-AI provider support & customizable templates
+* **1.3.0**: GUI & enhanced diff highlighting
+* **1.4.0**: Advanced MCP tools & webhook support
 
 ---
 
@@ -224,9 +307,10 @@ Follow the prompts to generate and commit your changes.
 
 **Requirements:**
 
-* Packages in `requirements.txt`
+* Packages in `requirements.txt` (including `flask` & `flask-cors` for MCP)
 * Valid credentials in `config.ini`
-* Internet for API calls
+* Internet for AI API calls
+* Optional: MCP server configuration for external integrations
 
 **Best Practices:**
 

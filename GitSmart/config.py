@@ -28,6 +28,11 @@ AUTO_REFRESH = config["APP"]["auto_refresh"].lower() == "true"
 AUTO_REFRESH_INTERVAL = int(config["APP"]["auto_refresh_interval"])
 TOKEN_INCREMENT = 3000
 
+# MCP Server Configuration
+MCP_ENABLED = config.get("MCP", "enabled", fallback="false").lower() == "true"
+MCP_PORT = int(config.get("MCP", "port", fallback="8765"))
+MCP_HOST = config.get("MCP", "host", fallback="127.0.0.1")
+
 # Initialize logger
 if DEBUG:
     logging.basicConfig(
