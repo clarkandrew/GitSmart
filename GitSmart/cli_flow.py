@@ -41,6 +41,8 @@ from .git_utils import (
     run_git_command,
     get_repo_name,
     get_git_remotes,
+    get_current_branch,
+    get_all_branches,
     push_to_remote
 )
 from .ai_utils import generate_commit_message, generate_summary, extract_tag_value
@@ -55,6 +57,10 @@ cli_flow.py
 """
 
 import re
+
+class MenuNavigationException(Exception):
+    """Raised when user wants to navigate back from a submenu (e.g., Ctrl-C)."""
+    pass
 
 def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
     """
@@ -74,7 +80,7 @@ def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
         if isinstance(c, str) and ("Generate Commit" in c or "Generate Commit for Staged Changes" in c):
             commit_option = c
             break
-    
+
     # Add the generate commit option first if it exists
     if commit_option and staged_changes:
         styled_choices.append(
@@ -84,8 +90,8 @@ def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
             )
         )
         default_choice = commit_option
-    
-    # Then process all other options    
+
+    # Then process all other options
     for c in choices:
         # Skip the Generate Commit option since we already handled it
         if isinstance(c, str) and ("Generate Commit" in c or "Generate Commit for Staged Changes" in c):
@@ -98,7 +104,7 @@ def main_menu_prompt(MODEL: str, title: str, choices: list) -> str:
 
         if menu_item_match:
             arrow, action_base, count_val, additions_val, deletions_val = menu_item_match.groups()
-                
+
             styled_choices.append(
                 questionary.Choice(
                     title=[
@@ -225,11 +231,15 @@ def handle_files(changes: List[Dict[str, Any]], action: str) -> str:
         )
         choices.append(choice)
 
-    selected_files = questionary.checkbox(
-        f"Select files to {action}:",
-        choices=choices,
-        style=fancy_questionary_style # Use fancy_questionary_style for consistency
-    ).unsafe_ask()
+    try:
+        selected_files = questionary.checkbox(
+            f"Select files to {action}:",
+            choices=choices,
+            style=fancy_questionary_style # Use fancy_questionary_style for consistency
+        ).unsafe_ask()
+    except KeyboardInterrupt:
+        # User pressed Ctrl-C in submenu, navigate back to main menu
+        raise MenuNavigationException(f"Cancelled {action} operation")
 
     if selected_files:
         files = selected_files
@@ -374,7 +384,7 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
         return
 
     display_file_diffs(diff, staged_changes, subtitle="Changes: Additions and Deletions")
-    
+
     # Prompt for custom notes
     try:
         add_notes = questionary.text(
@@ -394,8 +404,8 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
                 notes = notes.replace("```", "\\`\\`\\`")
                 custom_notes = notes
     except KeyboardInterrupt:
-        console.print("[bold yellow]⚠️  Input interrupted by user[/bold yellow]")
-        raise KeyboardInterrupt("User interrupted input")
+        console.print("[bold yellow]⚠️  Cancelled commit generation[/bold yellow]")
+        raise MenuNavigationException("User cancelled commit generation")
     except Exception as e:
         # Handle RefreshMenuException and other interruptions during commit generation
         if "RefreshMenuException" in str(type(e)):
@@ -405,12 +415,12 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
         else:
             console.print(f"[bold yellow]⚠️  Input error: {e}[/bold yellow]")
             custom_notes = None
-    
+
     try:
         commit_message = generate_commit_message(MODEL, diff, custom_notes=custom_notes)
     except KeyboardInterrupt:
-        console.print("[bold yellow]⚠️  Commit generation interrupted by user[/bold yellow]")
-        raise KeyboardInterrupt("User interrupted commit generation")
+        console.print("[bold yellow]⚠️  Cancelled commit generation[/bold yellow]")
+        raise MenuNavigationException("User cancelled commit generation")
 
     if commit_message:
         printer.print_divider()
@@ -431,8 +441,8 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
                 style=configure_questionary_style()
             ).unsafe_ask(patch_stdout=True)
         except KeyboardInterrupt:
-            console.print("[bold yellow]⚠️  Action selection interrupted by user[/bold yellow]")
-            raise KeyboardInterrupt("User interrupted action selection")
+            console.print("[bold yellow]⚠️  Cancelled commit action[/bold yellow]")
+            raise MenuNavigationException("User cancelled commit action")
         except Exception as e:
             # Handle RefreshMenuException and other interruptions during commit generation
             if "RefreshMenuException" in str(type(e)):
@@ -460,8 +470,8 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
                     style=configure_questionary_style()
                 ).unsafe_ask(patch_stdout=True)
             except KeyboardInterrupt:
-                console.print("[bold yellow]⚠️  Edit interrupted by user[/bold yellow]")
-                raise KeyboardInterrupt("User interrupted edit")
+                console.print("[bold yellow]⚠️  Cancelled commit edit[/bold yellow]")
+                raise MenuNavigationException("User cancelled commit edit")
             except Exception as e:
                 # Handle RefreshMenuException and other interruptions during commit generation
                 if "RefreshMenuException" in str(type(e)):
@@ -488,8 +498,8 @@ def handle_generate_commit(MODEL: str, diff: str, staged_changes: List[Dict[str,
                     style=configure_questionary_style()
                 ).unsafe_ask(patch_stdout=True)
             except KeyboardInterrupt:
-                console.print("[bold yellow]⚠️  Confirmation interrupted by user[/bold yellow]")
-                raise KeyboardInterrupt("User interrupted confirmation")
+                console.print("[bold yellow]⚠️  Cancelled commit confirmation[/bold yellow]")
+                raise MenuNavigationException("User cancelled commit confirmation")
             except Exception as e:
                 # Handle RefreshMenuException and other interruptions during commit generation
                 if "RefreshMenuException" in str(type(e)):
@@ -571,12 +581,16 @@ def handle_review_changes(
             checked=is_staged
         ))
 
-    selected_files = questionary.checkbox(
-        "Select files to review their diffs:",
-        choices=choices,
-        style=fancy_questionary_style, # Use fancy_questionary_style for consistency
-        instruction="(Use space to select, Enter to confirm)"
-    ).unsafe_ask()
+    try:
+        selected_files = questionary.checkbox(
+            "Select files to review their diffs:",
+            choices=choices,
+            style=fancy_questionary_style, # Use fancy_questionary_style for consistency
+            instruction="(Use space to select, Enter to confirm)"
+        ).unsafe_ask()
+    except KeyboardInterrupt:
+        console.print("[bold yellow]⚠️  Cancelled file review[/bold yellow]")
+        raise MenuNavigationException("User cancelled file review")
 
     if not selected_files:
         console.print("[bold yellow]No files selected for review.[/bold yellow]")
@@ -713,11 +727,15 @@ def select_model():
 
 
     # Prompt user for model selection with current model as default
-    selected_model = questionary.text(
-        "Select a model:\n",
-        history=FileHistory(history_file),
-        default=DEFAULT_MODEL
-    ).ask()
+    try:
+        selected_model = questionary.text(
+            "Select a model:\n",
+            history=FileHistory(history_file),
+            default=DEFAULT_MODEL
+        ).ask()
+    except KeyboardInterrupt:
+        console.print("[bold yellow]⚠️  Cancelled model selection[/bold yellow]")
+        raise MenuNavigationException("User cancelled model selection")
 
     if selected_model:
         MODEL = selected_model
@@ -826,24 +844,36 @@ def handle_ignore_files():
 
         choices.append(questionary.Choice(title=title_parts, value=file, checked=(file in ignored_files)))
 
-    action = questionary.select(
-        "Would you like to select files to ignore or enter custom patterns?",
-        choices=["Select files", "Enter custom patterns"],
-        style=configure_questionary_style()
-    ).unsafe_ask()
+    try:
+        action = questionary.select(
+            "Would you like to select files to ignore or enter custom patterns?",
+            choices=["Select files", "Enter custom patterns"],
+            style=configure_questionary_style()
+        ).unsafe_ask()
+    except KeyboardInterrupt:
+        console.print("[bold yellow]⚠️  Cancelled ignore files operation[/bold yellow]")
+        raise MenuNavigationException("User cancelled ignore files operation")
 
     if action == "Select files":
-        selected_files = questionary.checkbox(
-            "Select files to ignore:",
-            choices=choices,
-            style=configure_questionary_style()
-        ).unsafe_ask()
+        try:
+            selected_files = questionary.checkbox(
+                "Select files to ignore:",
+                choices=choices,
+                style=configure_questionary_style()
+            ).unsafe_ask()
+        except KeyboardInterrupt:
+            console.print("[bold yellow]⚠️  Cancelled file selection[/bold yellow]")
+            raise MenuNavigationException("User cancelled file selection")
     else:
-        custom_patterns = questionary.text(
-            "Enter custom patterns to ignore (comma-separated):",
-            style=configure_questionary_style()
-        ).unsafe_ask()
-        selected_files = [pattern.strip() for pattern in custom_patterns.split(",")]
+        try:
+            custom_patterns = questionary.text(
+                "Enter custom patterns to ignore (comma-separated):",
+                style=configure_questionary_style()
+            ).unsafe_ask()
+            selected_files = [pattern.strip() for pattern in custom_patterns.split(",")]
+        except KeyboardInterrupt:
+            console.print("[bold yellow]⚠️  Cancelled custom pattern entry[/bold yellow]")
+            raise MenuNavigationException("User cancelled custom pattern entry")
 
     if selected_files:
         update_gitignore(selected_files)
@@ -859,11 +889,54 @@ def get_tracked_files() -> List[str]:
 def handle_push_repo() -> List[str]:
     import questionary
 
+    # Get remotes
     remotes = get_git_remotes()
     if not remotes:
         console.print("[bold red]No remotes found. Please add a remote repository first.[/bold red]")
         return ["No remotes found."]
 
+    # Get current branch and all branches
+    current_branch = get_current_branch()
+    all_branches = get_all_branches()
+
+    if not current_branch:
+        console.print("[bold red]No current branch detected. Make sure you're in a git repository.[/bold red]")
+        return ["No current branch detected."]
+
+    # Prepare branch choices
+    branch_choices = []
+
+    # Add current branch as default choice
+    branch_choices.append(questionary.Choice(f"{current_branch} (current)", value=current_branch, checked=True))
+
+    # Add other local branches
+    for branch in all_branches["local"]:
+        if branch != current_branch:
+            branch_choices.append(questionary.Choice(f"{branch} (local)", value=branch))
+
+    # Add remote branches
+    for branch in all_branches["remote"]:
+        # Extract just the branch name from remote/branch format
+        branch_name = branch.split('/')[-1] if '/' in branch else branch
+        if branch_name not in [current_branch] + all_branches["local"]:
+            branch_choices.append(questionary.Choice(f"{branch_name} (remote: {branch})", value=branch_name))
+
+    # Select branch to push
+    if len(branch_choices) > 1:
+        selected_branch = questionary.select(
+            "Select branch to push:",
+            choices=branch_choices,
+            style=configure_questionary_style()
+        ).unsafe_ask()
+    else:
+        selected_branch = current_branch
+        console.print(f"[bold blue]Using current branch: {current_branch}[/bold blue]")
+
+    if not selected_branch:
+        console.print("[bold yellow]No branch selected. Push aborted.[/bold yellow]")
+        return ["No branch selected."]
+
+    # Select remotes
     selected_remotes = questionary.checkbox(
         "Select remote repositories to push to:",
         choices=[questionary.Choice(f"{name} ({url})", value=name) for name, url in remotes.items()]
@@ -873,7 +946,8 @@ def handle_push_repo() -> List[str]:
         console.print("[bold yellow]No remotes selected. Push aborted.[/bold yellow]")
         return ["No remotes selected."]
 
-    confirmation_message = "Are you sure you want to push to the following remote(s):\n"
+    # Confirmation
+    confirmation_message = f"Are you sure you want to push branch '{selected_branch}' to the following remote(s):\n"
     for remote in selected_remotes:
         confirmation_message += f"- {remote} ({remotes[remote]})\n"
 
@@ -885,9 +959,10 @@ def handle_push_repo() -> List[str]:
         console.print("[bold yellow]Push action canceled by the user.[/bold yellow]")
         return "Push action canceled by the user."
 
+    # Execute push
     status_messages = []
     for remote in selected_remotes:
-        status_message = push_to_remote(remote, remotes[remote])
+        status_message = push_to_remote(remote, remotes[remote], selected_branch)
         if "Successfully" in status_message:
             console.print(f"[bold green]{status_message}[/bold green]")
         else:
@@ -983,12 +1058,16 @@ def select_commit(commits: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
 
         choices.append(questionary.Choice(title=title_parts, value=c))
 
-    selected_commit = questionary.select(
-        "Select a commit to view details:",
-        choices=choices,
-        style=fancy_questionary_style # Use fancy_questionary_style for consistency
-    ).unsafe_ask()
-    return selected_commit
+    try:
+        selected_commit = questionary.select(
+            "Select a commit to view details:",
+            choices=choices,
+            style=fancy_questionary_style # Use fancy_questionary_style for consistency
+        ).unsafe_ask()
+        return selected_commit
+    except KeyboardInterrupt:
+        console.print("[bold yellow]⚠️  Cancelled commit selection[/bold yellow]")
+        raise MenuNavigationException("User cancelled commit selection")
 
 def print_commit_details(commit: Dict[str, Any]):
     """
@@ -1042,12 +1121,16 @@ def summarize_selected_commits():
             ]
 
         commit_choices.append(questionary.Choice(title=title_parts, value=c))
-    selected_commits = questionary.checkbox(
-        "Select commits to summarize:",
-        choices=commit_choices,
-        style=fancy_questionary_style, # Use fancy_questionary_style for consistency
-        instruction="(Use space to select, Enter to confirm)"
-    ).unsafe_ask()
+    try:
+        selected_commits = questionary.checkbox(
+            "Select commits to summarize:",
+            choices=commit_choices,
+            style=fancy_questionary_style, # Use fancy_questionary_style for consistency
+            instruction="(Use space to select, Enter to confirm)"
+        ).unsafe_ask()
+    except KeyboardInterrupt:
+        console.print("[bold yellow]⚠️  Cancelled commit summarization[/bold yellow]")
+        raise MenuNavigationException("User cancelled commit summarization")
 
     if not selected_commits:
         console.print("[bold yellow]No commits selected for summarization.[/bold yellow]")

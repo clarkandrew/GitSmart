@@ -26,7 +26,8 @@ from .cli_flow import (
     select_model,
     reset_console,
     get_menu_options,
-    main_menu_prompt
+    main_menu_prompt,
+    MenuNavigationException
 )
 from .utils import chdir_to_git_root
 from .repo_registry import get_repository_registry, ensure_repository_context
@@ -37,10 +38,10 @@ class DummyMCPState:
     """Dummy MCP state that always returns False for operation checks."""
     def is_operation_in_progress(self) -> bool:
         return False
-    
+
     def get_current_operation(self) -> str:
         return None
-    
+
     def wait_for_operations_to_complete(self, timeout=None) -> bool:
         return True
 
@@ -335,7 +336,7 @@ def main(reload: bool = False):
             while True:
                 if refresh_event.is_set():
                     return None  # Refresh needed
-                
+
                 # Check for MCP operations
                 mcp_state = get_mcp_state()
                 if mcp_state.is_operation_in_progress():
@@ -384,7 +385,7 @@ def main(reload: bool = False):
                     if mcp_state.is_operation_in_progress():
                         current_op = mcp_state.get_current_operation()
                         console.print(f"[bold yellow]⏸️  CLI menu paused - MCP operation in progress: {current_op}[/bold yellow]")
-                        
+
                         # Wait for MCP operation to complete with timeout
                         if mcp_state.wait_for_operations_to_complete(timeout=0.5):
                             console.print("[bold green]✅ MCP operation completed - resuming CLI menu[/bold green]")
@@ -433,7 +434,7 @@ def main(reload: bool = False):
                             mcp_state = get_mcp_state()
                             if mcp_state.is_operation_in_progress():
                                 continue  # Jump to top of loop for MCP handling
-                            
+
                             action = main_menu_prompt(MODEL, title, choices)
                     except (OSError, EOFError) as e:
                         if DEBUG:
@@ -475,6 +476,11 @@ def main(reload: bool = False):
                             # No need to refresh here; will refresh at top of loop
                             if status_msg:
                                 console.print(status_msg)
+                        except MenuNavigationException:
+                            # User pressed Ctrl-C in submenu, return to main menu
+                            reset_console()
+                            console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                            exit_prompted = 0  # Reset exit counter since we're navigating back
                         except KeyboardInterrupt:
                             reset_console()
                             console.print("[bold yellow]⚠️  Commit generation interrupted[/bold yellow]")
@@ -484,38 +490,74 @@ def main(reload: bool = False):
 
                 elif action == "Review Changes":
                     reset_console()
-                    handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
+                    try:
+                        handle_review_changes(staged_changes, unstaged_changes, diff, unstaged_diff)
+                    except MenuNavigationException:
+                        # User pressed Ctrl-C in submenu, return to main menu
+                        reset_console()
+                        console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                        exit_prompted = 0  # Reset exit counter since we're navigating back
 
                 elif action.startswith("↑ Stage Files"):
                     # Use context manager to safely suspend auto-refresh during nested prompts
                     with AutoRefreshSuspender():
-                        status_msg = handle_stage_files(unstaged_changes)
-                        reset_console()
-                        console.print(status_msg)
+                        try:
+                            status_msg = handle_stage_files(unstaged_changes)
+                            reset_console()
+                            console.print(status_msg)
+                        except MenuNavigationException:
+                            # User pressed Ctrl-C in submenu, return to main menu
+                            reset_console()
+                            console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                            exit_prompted = 0  # Reset exit counter since we're navigating back
 
                 elif action.startswith("↓ Unstage Files"):
                     # Use context manager to safely suspend auto-refresh during nested prompts
                     with AutoRefreshSuspender():
-                        status_msg = handle_unstage_files(staged_changes)
-                        reset_console()
-                        console.print(status_msg)
+                        try:
+                            status_msg = handle_unstage_files(staged_changes)
+                            reset_console()
+                            console.print(status_msg)
+                        except MenuNavigationException:
+                            # User pressed Ctrl-C in submenu, return to main menu
+                            reset_console()
+                            console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                            exit_prompted = 0  # Reset exit counter since we're navigating back
 
                 elif action == "Ignore Files":
-                    handle_ignore_files()
-                    reset_console()
+                    try:
+                        handle_ignore_files()
+                        reset_console()
+                    except MenuNavigationException:
+                        # User pressed Ctrl-C in submenu, return to main menu
+                        reset_console()
+                        console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                        exit_prompted = 0  # Reset exit counter since we're navigating back
 
                 elif action == "View Commit History":
                     reset_console()
-                    commits = display_commit_summary(20)
-                    selected_commit_data = select_commit(commits)
-                    if selected_commit_data:
-                        print_commit_details(selected_commit_data)
+                    try:
+                        commits = display_commit_summary(20)
+                        selected_commit_data = select_commit(commits)
+                        if selected_commit_data:
+                            print_commit_details(selected_commit_data)
+                    except MenuNavigationException:
+                        # User pressed Ctrl-C in submenu, return to main menu
+                        reset_console()
+                        console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                        exit_prompted = 0  # Reset exit counter since we're navigating back
 
                 elif action == "Select Model":
                     reset_console()
-                    MODEL = select_model()
-                    # select_model already updates the cache, so no need to do it again here
-                    console.print(f"[bold green]Model selected:[/bold green] {MODEL}")
+                    try:
+                        MODEL = select_model()
+                        # select_model already updates the cache, so no need to do it again here
+                        console.print(f"[bold green]Model selected:[/bold green] {MODEL}")
+                    except MenuNavigationException:
+                        # User pressed Ctrl-C in submenu, return to main menu
+                        reset_console()
+                        console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                        exit_prompted = 0  # Reset exit counter since we're navigating back
 
                 elif action == "Push Repo":
                     reset_console()
@@ -524,7 +566,13 @@ def main(reload: bool = False):
 
                 elif action == "Summarize Commits":
                     reset_console()
-                    summarize_selected_commits()
+                    try:
+                        summarize_selected_commits()
+                    except MenuNavigationException:
+                        # User pressed Ctrl-C in submenu, return to main menu
+                        reset_console()
+                        console.print("[bold yellow]↩️  Returned to main menu[/bold yellow]")
+                        exit_prompted = 0  # Reset exit counter since we're navigating back
 
                 elif action == "Exit":
                     reset_console()

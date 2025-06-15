@@ -151,15 +151,107 @@ def get_git_remotes() -> Dict[str, str]:
         console.print(f"[bold red]Failed to retrieve git remotes: {e}[/bold red]")
         return {}
 
-def push_to_remote(remote: str, url: str) -> str:
+def get_current_branch() -> Optional[str]:
     """
-    Push to a specific remote repository.
+    Get the current branch name.
+
+    Returns:
+        Current branch name or None if not on any branch
     """
     try:
-        logger.debug(f"Pushing to remote: {remote}")
-        subprocess.run(["git", "push", remote], check=True)
-        return f"Successfully pushed to {remote} ({url})."
+        result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            stdout=subprocess.PIPE,
+            check=True,
+            text=True
+        )
+        current_branch = result.stdout.strip()
+        logger.debug(f"Current branch: {current_branch}")
+        return current_branch if current_branch else None
+    except subprocess.CalledProcessError as e:
+        if DEBUG:
+            logger.error(f"Failed to get current branch: {e}")
+        return None
+
+def get_all_branches() -> Dict[str, List[str]]:
+    """
+    Get all branches (local and remote).
+
+    Returns:
+        Dictionary with 'local' and 'remote' keys containing lists of branch names
+    """
+    try:
+        result = subprocess.run(
+            ["git", "branch", "-a"],
+            stdout=subprocess.PIPE,
+            check=True,
+            text=True
+        )
+
+        branches = {"local": [], "remote": []}
+        for line in result.stdout.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+
+            # Remove current branch indicator (*)
+            if line.startswith('*'):
+                line = line[1:].strip()
+
+            # Skip HEAD references
+            if 'HEAD ->' in line:
+                continue
+
+            # Categorize branches
+            if line.startswith('remotes/'):
+                # Remove 'remotes/' prefix and extract branch name
+                remote_branch = line[8:]  # Remove 'remotes/'
+                if '/' in remote_branch:
+                    branches["remote"].append(remote_branch)
+            else:
+                branches["local"].append(line)
+
+        # Remove duplicates and sort
+        branches["local"] = sorted(list(set(branches["local"])))
+        branches["remote"] = sorted(list(set(branches["remote"])))
+
+        logger.debug(f"Available branches: {branches}")
+        return branches
+    except subprocess.CalledProcessError as e:
+        if DEBUG:
+            logger.error(f"Failed to get branches: {e}")
+        return {"local": [], "remote": []}
+
+def push_to_remote(remote: str, url: str, branch: Optional[str] = None) -> str:
+    """
+    Push to a specific remote repository.
+
+    Args:
+        remote: Remote name (e.g., 'origin')
+        url: Remote URL for display purposes
+        branch: Specific branch to push. If None, pushes current branch
+
+    Returns:
+        Status message string
+    """
+    try:
+        if branch:
+            cmd = ["git", "push", remote, branch]
+            logger.debug(f"Pushing branch '{branch}' to remote: {remote}")
+        else:
+            cmd = ["git", "push", remote]
+            logger.debug(f"Pushing current branch to remote: {remote}")
+
+        subprocess.run(cmd, check=True)
+
+        if branch:
+            return f"Successfully pushed branch '{branch}' to {remote} ({url})."
+        else:
+            return f"Successfully pushed to {remote} ({url})."
     except subprocess.CalledProcessError as e:
         if DEBUG:
             logger.error(f"Failed to push to {remote}: {e}")
-        return f"Failed to push to {remote}: {e}"
+        if branch:
+            return f"Failed to push branch '{branch}' to {remote}: {e}"
+        else:
+            return f"Failed to push to {remote}: {e}"
